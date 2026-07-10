@@ -17,7 +17,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Akash's Dashboard",
+  title: "Master Dashboard",
   description: "Mission control for every project — status, progress, and owners in one place.",
 };
 

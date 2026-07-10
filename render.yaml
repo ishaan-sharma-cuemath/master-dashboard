@@ -1,0 +1,28 @@
+# Render deploy config — Web Service with a persistent disk for SQLite.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: master-dashboard
+    runtime: node
+    plan: starter # disks require a paid instance (Free plan can't mount disks)
+    region: singapore # closest to India; change if you prefer
+    buildCommand: npm install && npm run build
+    startCommand: npm start # `next start` — reads Render's $PORT automatically
+    healthCheckPath: /login # returns 200 without auth (/ redirects to login)
+    autoDeploy: true
+    disk:
+      name: data
+      mountPath: /data # SQLite file lives here and survives deploys/restarts
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        value: file:/data/dashboard.db # points at the mounted disk
+      # Set these in the Render dashboard (never commit secrets):
+      - key: AUTH_SECRET
+        sync: false
+      - key: AUTH_GOOGLE_ID
+        sync: false
+      - key: AUTH_GOOGLE_SECRET
+        sync: false
+      - key: AUTH_URL # e.g. https://master-dashboard.onrender.com
+        sync: false

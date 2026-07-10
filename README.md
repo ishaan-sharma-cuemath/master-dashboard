@@ -1,4 +1,4 @@
-# Akash's Dashboard
+# Master Dashboard
 
 A central mission-control for tracking many projects at once — their status, progress, stages, and owners — in one calm, clean place.
 

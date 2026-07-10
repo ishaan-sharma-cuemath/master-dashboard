@@ -1,5 +1,6 @@
+import { auth, signOut } from "@/auth";
 import type { FolderRow } from "@/lib/db/schema";
-import { Plus, Search } from "lucide-react";
+import { LogOut, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "./ThemeToggle";
@@ -11,7 +12,7 @@ const VIEWS: { label: string; href: string; key: string }[] = [
   { label: "Completed", href: "/?lifecycle=completed", key: "completed" },
 ];
 
-export function AppShell({
+export async function AppShell({
   folders,
   activeFolderId,
   activeView = "all",
@@ -24,6 +25,8 @@ export function AppShell({
   searchQuery?: string;
   children: ReactNode;
 }) {
+  const session = await auth();
+  const user = session?.user;
   return (
     <div className="flex min-h-screen">
       {/* ————— Sidebar ————— */}
@@ -36,9 +39,9 @@ export function AppShell({
             className="grid h-[26px] w-[26px] place-items-center rounded-[8px] text-[14px] font-bold tracking-[-0.03em]"
             style={{ background: "var(--btn)", color: "var(--btn-ink)" }}
           >
-            A
+            M
           </span>
-          <span className="text-[14.5px] font-semibold tracking-[-0.02em]">Akash&apos;s Dashboard</span>
+          <span className="text-[14.5px] font-semibold tracking-[-0.02em]">Master Dashboard</span>
         </Link>
 
         <nav className="flex-1 overflow-y-auto px-2.5 pb-4">
@@ -82,6 +85,35 @@ export function AppShell({
             </Link>
           ))}
         </nav>
+
+        {user && (
+          <div className="flex items-center gap-2.5 border-t px-3 py-3" style={{ borderColor: "var(--line)" }}>
+            <span
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white"
+              style={{ background: "var(--accent)" }}
+            >
+              {(user.name ?? user.email ?? "?").slice(0, 1).toUpperCase()}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: "var(--ink-secondary)" }}>
+              {user.name ?? user.email}
+            </span>
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/login" });
+              }}
+            >
+              <button
+                type="submit"
+                title="Sign out"
+                className="grid h-7 w-7 place-items-center rounded-[7px] transition-colors hover:bg-[var(--accent-soft)]"
+                style={{ color: "var(--ink-muted)" }}
+              >
+                <LogOut size={14} strokeWidth={1.8} />
+              </button>
+            </form>
+          </div>
+        )}
       </aside>
 
       {/* ————— Main ————— */}
