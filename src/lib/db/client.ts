@@ -5,6 +5,8 @@ import fs from "node:fs";
 import path from "node:path";
 import * as schema from "./schema";
 
+type DB = BetterSQLite3Database<typeof schema>;
+
 function resolveDbPath(url: string | undefined): string {
   const raw = (url ?? "file:./data/dashboard.db").replace(/^file:/, "");
   const abs = path.isAbsolute(raw) ? raw : path.join(process.cwd(), raw);
@@ -12,22 +14,39 @@ function resolveDbPath(url: string | undefined): string {
   return abs;
 }
 
-function createDb(): BetterSQLite3Database<typeof schema> {
+function createDb(): DB {
   const sqlite = new Database(resolveDbPath(process.env.DATABASE_URL));
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");
-  const db = drizzle(sqlite, { schema });
-  // Idempotent, sub-ms when up to date — guarantees the schema exists in dev.
+  const instance = drizzle(sqlite, { schema });
+  // Idempotent, sub-ms when up to date — guarantees the schema exists, including
+  // on a freshly-mounted prod disk on first boot.
   try {
-    migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
+    migrate(instance, { migrationsFolder: path.join(process.cwd(), "drizzle") });
   } catch {
-    // Migrations folder absent (e.g. fresh checkout before db:generate) — seed script handles it.
+    // Migrations folder absent (e.g. before db:generate) — seed script handles it.
   }
-  return db;
+  return instance;
 }
 
-// Cache across HMR reloads in dev so we don't leak connections.
-const globalForDb = globalThis as unknown as { __db?: BetterSQLite3Database<typeof schema> };
+// Cache across dev HMR reloads (and within a prod process) so we don't leak connections.
+const globalForDb = globalThis as unknown as { __db?: DB };
 
-export const db = globalForDb.__db ?? createDb();
-if (process.env.NODE_ENV !== "production") globalForDb.__db = db;
+/**
+ * Lazily open the connection on FIRST USE — never at module load. `next build`
+ * imports this module while collecting page data; opening the DB there would
+ * touch the filesystem and can fail on a not-yet-mounted Render disk. Deferring
+ * to first query means the DB only opens at runtime, when /data is mounted.
+ */
+function getDb(): DB {
+  if (!globalForDb.__db) globalForDb.__db = createDb();
+  return globalForDb.__db;
+}
+
+export const db = new Proxy({} as DB, {
+  get(_target, prop, receiver) {
+    const instance = getDb() as unknown as Record<string | symbol, unknown>;
+    const value = Reflect.get(instance, prop, receiver);
+    return typeof value === "function" ? (value as (...a: unknown[]) => unknown).bind(instance) : value;
+  },
+});
