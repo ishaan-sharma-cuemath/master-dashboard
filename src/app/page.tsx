@@ -1,65 +1,121 @@
-import Image from "next/image";
+import { EmptyState } from "@/components/home/EmptyState";
+import { FolderSection } from "@/components/home/FolderSection";
+import { ProjectCard } from "@/components/home/ProjectCard";
+import { ViewSwitcher } from "@/components/home/ViewSwitcher";
+import { AppShell } from "@/components/shell/AppShell";
+import { GraphView } from "@/components/graph/GraphView";
+import { needsAttentionSort, orderFolderSection } from "@/lib/derive";
+import { applyFilters, hasActiveFilters, type FilterParams } from "@/lib/queries/filters";
+import { buildGraphData } from "@/lib/queries/graph";
+import { getWorkspace } from "@/lib/queries/projects";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+export const dynamic = "force-dynamic";
+
+type HomeParams = FilterParams & { view?: string };
+
+export default async function Home({ searchParams }: { searchParams: Promise<HomeParams> }) {
+  const sp = await searchParams;
+  const ws = getWorkspace();
+  const view = sp.view === "graph" ? "graph" : "list";
+
+  const archiveFolderId = ws.folders.find((f) => f.isSystem === "archive")?.id;
+  const active = ws.projects.filter((p) => p.folderId !== archiveFolderId && !p.archivedAt);
+  const activeCount = active.filter((p) => p.lifecycle === "in_progress").length;
+
+  const sidebarFolders = ws.folders.map((folder) => ({
+    folder,
+    count: ws.projects.filter((p) => p.folderId === folder.id).length,
+  }));
+
+  const filtered = hasActiveFilters(sp) || sp.folder;
+
+  let content: React.ReactNode;
+  if (view === "graph") {
+    content = (
+      <section className="mt-6">
+        <GraphView data={buildGraphData(ws)} />
+      </section>
+    );
+  } else if (filtered) {
+    const results = needsAttentionSort(applyFilters(sp.folder ? ws.projects : active, sp));
+    content = (
+      <section className="mt-7">
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-[13.5px] font-medium" style={{ color: "var(--ink-secondary)" }}>
+            Results
+          </h2>
+          <span className="text-[12px]" style={{ color: "var(--ink-muted)" }}>
+            {results.length}
+          </span>
+          <a href="/" className="ml-auto text-[12.5px] underline-offset-2 hover:underline" style={{ color: "var(--accent)" }}>
+            Clear
+          </a>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+        {results.length === 0 ? (
+          <div className="mt-4">
+            <EmptyState
+              title="No projects match"
+              hint="Try removing a filter, or search for something broader."
+              action={{ label: "Clear all filters", href: "/" }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
+            {results.map((p, i) => (
+              <ProjectCard key={p.id} project={p} index={i} />
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  } else {
+    const sections = ws.folders
+      .filter((f) => f.isSystem !== "archive")
+      .map((folder) => {
+        const members = active.filter((p) => p.folderId === folder.id);
+        return { folder, members: orderFolderSection(members, ws.relatedness) };
+      })
+      .filter((s) => s.members.length > 0);
+
+    content = (
+      <div className="mt-7 flex flex-col gap-6">
+        {sections.map(({ folder, members }) => (
+          <FolderSection key={folder.id} title={folder.name} color={folder.color} count={members.length}>
+            {members.map((p, i) => (
+              <ProjectCard key={p.id} project={p} index={i} />
+            ))}
+          </FolderSection>
+        ))}
+        {active.length === 0 && (
+          <EmptyState
+            title="Set up your first project"
+            hint="Track every project's status, stages, and owners in one place."
+            action={{ label: "New project", href: "/new" }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <AppShell
+      folders={sidebarFolders}
+      activeFolderId={sp.folder}
+      activeView={sp.lifecycle === "completed" ? "completed" : "all"}
+      searchQuery={sp.q}
+    >
+      <div className="mx-auto max-w-[1200px]">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-[21px] font-semibold tracking-[-0.01em]">Projects</h1>
+          <span className="text-[12.5px]" style={{ color: "var(--ink-muted)" }}>
+            {ws.projects.length} projects · {activeCount} active
+          </span>
+          <span className="ml-auto">
+            <ViewSwitcher />
+          </span>
         </div>
-      </main>
-    </div>
+        {content}
+      </div>
+    </AppShell>
   );
 }
