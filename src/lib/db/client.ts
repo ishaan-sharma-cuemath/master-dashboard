@@ -3,6 +3,7 @@ import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "node:fs";
 import path from "node:path";
+import { ensureBootstrap } from "./bootstrap";
 import * as schema from "./schema";
 
 type DB = BetterSQLite3Database<typeof schema>;
@@ -25,6 +26,12 @@ function createDb(): DB {
     migrate(instance, { migrationsFolder: path.join(process.cwd(), "drizzle") });
   } catch {
     // Migrations folder absent (e.g. before db:generate) — seed script handles it.
+  }
+  // First-boot seed on a fresh DB (e.g. a new Render disk); no-op otherwise.
+  try {
+    ensureBootstrap(instance);
+  } catch {
+    // Best-effort — never block startup on seeding.
   }
   return instance;
 }
