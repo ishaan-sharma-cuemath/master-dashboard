@@ -1,9 +1,10 @@
 import { HealthBadge } from "@/components/health/HealthBadge";
-import { UpdateComposer } from "@/components/project/UpdateComposer";
+import { OversightActions } from "@/components/project/OversightActions";
 import { Avatar } from "@/components/ui/Avatar";
 import { TagChip } from "@/components/ui/TagChip";
 import { db } from "@/lib/db/client";
 import { statusUpdates } from "@/lib/db/schema";
+import { daysSince } from "@/lib/derive";
 import { fmtDate, fmtDateTime, relAge } from "@/lib/format";
 import { getWorkspace } from "@/lib/queries/projects";
 import { desc, eq } from "drizzle-orm";
@@ -135,17 +136,30 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </ol>
       </section>
 
-      {/* ————— Updates: recent, compact ————— */}
+      {/* ————— Oversight: flag / ask for status ————— */}
       <section className="mt-9">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
-          Status updates
+          Oversight
         </h2>
+        <div className="mt-4">
+          <OversightActions
+            projectId={p.id}
+            flagged={p.flagged}
+            flagNote={p.flagNote}
+            daysSinceRequest={daysSince(p.statusRequestedAt, new Date())}
+          />
+        </div>
+      </section>
 
-        {updates.length > 0 && (
+      {/* ————— Update history from the owner's portal (read-only) ————— */}
+      {updates.length > 0 && (
+        <section className="mt-9">
+          <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
+            Reported updates
+          </h2>
           <div className="mt-4 flex flex-col gap-3.5">
             {updates.slice(0, 5).map((u) => {
               const author = peopleById.get(u.authorId);
-              const rtgOwner = u.roadToGreenOwnerId ? peopleById.get(u.roadToGreenOwnerId) : null;
               return (
                 <article key={u.id} className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-2.5">
@@ -156,22 +170,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                     </span>
                   </div>
                   <p className="text-[13.5px] leading-relaxed">{u.note}</p>
-                  {u.roadToGreenAction && (
-                    <p className="rounded-[8px] px-3 py-1.5 text-[12.5px]" style={{ background: "var(--health-amber-soft)", color: "var(--health-amber-text)" }}>
-                      <span className="font-semibold">Road to green:</span> {u.roadToGreenAction}
-                      {rtgOwner && <span> — {rtgOwner.name}</span>}
-                    </p>
-                  )}
                 </article>
               );
             })}
           </div>
-        )}
-
-        <div className="mt-5">
-          <UpdateComposer projectId={p.id} people={ws.people} stages={p.stages} />
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

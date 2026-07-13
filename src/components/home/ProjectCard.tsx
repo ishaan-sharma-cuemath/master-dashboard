@@ -2,7 +2,7 @@ import { StatusDot } from "@/components/health/StatusDot";
 import { Avatar } from "@/components/ui/Avatar";
 import { StageBar } from "@/components/ui/StageBar";
 import type { DerivedProject } from "@/lib/derive";
-import { TriangleAlert } from "lucide-react";
+import { Bell, Flag, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
 /** Refined tile: status dot + name + owner, thin stage bar, one quiet meta line. */
@@ -23,6 +23,12 @@ export function ProjectCard({ project: p, index = 0 }: { project: DerivedProject
         <h3 className="truncate text-[15px] font-semibold tracking-[-0.015em]" style={{ color: "var(--ink)" }}>
           {p.name}
         </h3>
+        {p.flagged && (
+          <Flag size={13} strokeWidth={2} fill="currentColor" className="shrink-0" style={{ color: "var(--health-red)" }} />
+        )}
+        {p.statusRequestedAt && !p.flagged && (
+          <Bell size={13} strokeWidth={2} className="shrink-0" style={{ color: "var(--health-amber)" }} />
+        )}
         <span className="ml-auto shrink-0">
           <Avatar person={p.lead} size={22} />
         </span>

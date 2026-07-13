@@ -78,6 +78,11 @@ export const projects = sqliteTable(
     graphX: real("graph_x"),
     graphY: real("graph_y"),
     archivedAt: text("archived_at"),
+    // Oversight actions (set by Akash/Ishaan on the central dashboard)
+    flagged: integer("flagged", { mode: "boolean" }).notNull().default(false),
+    flagNote: text("flag_note"),
+    flaggedAt: text("flagged_at"),
+    statusRequestedAt: text("status_requested_at"),
     createdAt: text("created_at").notNull().$defaultFn(nowIso),
     updatedAt: text("updated_at").notNull().$defaultFn(nowIso),
   },
