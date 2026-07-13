@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /data
+
+# visa app — extracted to its own repo (github.com/ishaan-sharma-cuemath/visa-dashboard)
+/visa_Dashboard
