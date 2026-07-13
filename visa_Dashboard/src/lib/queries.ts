@@ -39,8 +39,11 @@ export type Stats = {
   inProgress: number;
   totalVisaFees: number;
   totalVendorFees: number;
+  grantedRate: number;
   byCountry: CountryStat[];
   byStage: { key: StageKey; label: string; count: number }[];
+  byVisaType: { label: string; count: number }[];
+  byVendor: { label: string; count: number }[];
 };
 
 export function getStats(apps: VisaApplicationRow[]): Stats {
@@ -77,6 +80,15 @@ export function getStats(apps: VisaApplicationRow[]): Stats {
     totalVendorFees += a.vendorFees ?? 0;
   }
 
+  const group = (keyFn: (a: VisaApplicationRow) => string) => {
+    const m = new Map<string, number>();
+    for (const a of apps) {
+      const k = keyFn(a);
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return [...m.entries()].map(([label, count]) => ({ label, count })).sort((x, y) => y.count - x.count);
+  };
+
   return {
     total: apps.length,
     granted,
@@ -84,9 +96,12 @@ export function getStats(apps: VisaApplicationRow[]): Stats {
     inProgress,
     totalVisaFees,
     totalVendorFees,
+    grantedRate: granted + rejected > 0 ? Math.round((granted / (granted + rejected)) * 100) : 0,
     byCountry: [...countryMap.values()].sort((a, b) => b.total - a.total),
     byStage: [...stageMap.entries()]
       .map(([key, v]) => ({ key, label: v.label, count: v.count }))
       .sort((a, b) => b.count - a.count),
+    byVisaType: group((a) => a.visaType),
+    byVendor: group((a) => a.vendor ?? "—"),
   };
 }

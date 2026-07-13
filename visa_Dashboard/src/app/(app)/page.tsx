@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Lock, Plus } from "lucide-react";
+import { ALLOWED_EMAILS } from "@/auth";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { requireUser } from "@/lib/auth-dal";
 import { fmtMoney } from "@/lib/format";
@@ -33,7 +34,6 @@ export default async function DashboardPage() {
   }
 
   const maxCountryTotal = Math.max(...stats.byCountry.map((c) => c.total), 1);
-  const maxStage = Math.max(...stats.byStage.map((s) => s.count), 1);
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,17 +45,18 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stat tiles */}
-      <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+      <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
         <StatTile label="Total" value={stats.total} />
         <StatTile label="Granted" value={stats.granted} tone="green" />
         <StatTile label="In progress" value={stats.inProgress} tone="blue" />
         <StatTile label="Rejected" value={stats.rejected} tone="red" />
+        <StatTile label="Approval rate" value={`${stats.grantedRate}%`} tone="green" />
         <StatTile label="Visa fees" value={fmtMoney(stats.totalVisaFees)} />
         <StatTile label="Vendor fees" value={fmtMoney(stats.totalVendorFees)} />
       </div>
 
+      {/* Country + pipeline */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-        {/* Visas by country */}
         <section className="card p-5">
           <div className="flex items-center justify-between">
             <div className="microlabel">Visas by country</div>
@@ -68,27 +69,21 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* Pipeline */}
         <section className="card p-5">
           <div className="microlabel">Pipeline</div>
-          <div className="mt-4 flex flex-col gap-3">
-            {stats.byStage.map((s) => (
-              <div key={s.key} className="flex items-center gap-3">
-                <span className="w-36 shrink-0 text-[12.5px]" style={{ color: "var(--ink-secondary)" }}>
-                  {s.label}
-                </span>
-                <div className="h-2.5 flex-1 overflow-hidden rounded-full" style={{ background: "var(--line)" }}>
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${(s.count / maxStage) * 100}%`, background: "var(--accent)" }}
-                  />
-                </div>
-                <span className="w-6 text-right font-mono text-[12px]" style={{ color: "var(--ink-secondary)" }}>
-                  {s.count}
-                </span>
-              </div>
-            ))}
-          </div>
+          <BarList rows={stats.byStage.map((s) => ({ label: s.label, count: s.count }))} />
+        </section>
+      </div>
+
+      {/* By visa type + by vendor */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="card p-5">
+          <div className="microlabel">By visa type</div>
+          <BarList rows={stats.byVisaType} />
+        </section>
+        <section className="card p-5">
+          <div className="microlabel">By vendor</div>
+          <BarList rows={stats.byVendor} />
         </section>
       </div>
 
@@ -115,6 +110,28 @@ export default async function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {/* Access */}
+      <section className="card p-5">
+        <div className="flex items-center gap-1.5">
+          <Lock size={13} style={{ color: "var(--ink-muted)" }} />
+          <div className="microlabel">Access</div>
+        </div>
+        <p className="mt-2 text-[12.5px]" style={{ color: "var(--ink-muted)" }}>
+          Only these Google accounts can sign in. Ask an admin to change the list in the code.
+        </p>
+        <ul className="mt-2.5 flex flex-wrap gap-2">
+          {ALLOWED_EMAILS.map((e) => (
+            <li
+              key={e}
+              className="rounded-[7px] px-2 py-1 font-mono text-[12px]"
+              style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+            >
+              {e}
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
@@ -134,6 +151,31 @@ function StatTile({ label, value, tone }: { label: string; value: string | numbe
       <div className="mt-1.5 text-[24px] font-semibold tracking-[-0.02em]" style={{ color }}>
         {value}
       </div>
+    </div>
+  );
+}
+
+function BarList({ rows }: { rows: { label: string; count: number }[] }) {
+  const max = Math.max(...rows.map((r) => r.count), 1);
+  return (
+    <div className="mt-4 flex flex-col gap-3">
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center gap-3">
+          <span
+            className="w-36 shrink-0 truncate text-[12.5px]"
+            style={{ color: "var(--ink-secondary)" }}
+            title={r.label}
+          >
+            {r.label}
+          </span>
+          <div className="h-2.5 flex-1 overflow-hidden rounded-full" style={{ background: "var(--line)" }}>
+            <div className="h-full rounded-full" style={{ width: `${(r.count / max) * 100}%`, background: "var(--accent)" }} />
+          </div>
+          <span className="w-6 text-right font-mono text-[12px]" style={{ color: "var(--ink-secondary)" }}>
+            {r.count}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

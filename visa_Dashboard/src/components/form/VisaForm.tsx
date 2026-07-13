@@ -4,7 +4,8 @@ import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Combobox } from "@/components/ui/Combobox";
-import { createApplication, type FormState } from "@/lib/actions/applications";
+import { type FormState } from "@/lib/actions/applications";
+import type { VisaApplicationRow } from "@/lib/db/schema";
 import {
   DAY_STATUS,
   DOC_SIGNED,
@@ -16,15 +17,30 @@ import {
 
 const initial: FormState = { ok: false };
 
-export function VisaForm({ presets }: { presets: Record<PresetField, string[]> }) {
-  const [state, formAction, pending] = useActionState(createApplication, initial);
+type Action = (state: FormState, fd: FormData) => Promise<FormState>;
 
-  const [formRequired, setFormRequired] = useState(false);
-  const [biometricRequired, setBiometricRequired] = useState(false);
-  const [interviewRequired, setInterviewRequired] = useState(false);
-  const [biometricStatus, setBiometricStatus] = useState<string>("Process not Started");
-  const [interviewStatus, setInterviewStatus] = useState<string>("Process not Started");
-  const [finalResult, setFinalResult] = useState<string>("Process not Started");
+export function VisaForm({
+  presets,
+  action,
+  application,
+  submitLabel = "Save application",
+  cancelHref = "/applications",
+}: {
+  presets: Record<PresetField, string[]>;
+  action: Action;
+  application?: VisaApplicationRow;
+  submitLabel?: string;
+  cancelHref?: string;
+}) {
+  const a = application;
+  const [state, formAction, pending] = useActionState(action, initial);
+
+  const [formRequired, setFormRequired] = useState(a?.formRequired ?? false);
+  const [biometricRequired, setBiometricRequired] = useState(a?.biometricRequired ?? false);
+  const [interviewRequired, setInterviewRequired] = useState(a?.interviewRequired ?? false);
+  const [biometricStatus, setBiometricStatus] = useState<string>(a?.biometricStatus ?? "Process not Started");
+  const [interviewStatus, setInterviewStatus] = useState<string>(a?.interviewStatus ?? "Process not Started");
+  const [finalResult, setFinalResult] = useState<string>(a?.finalResult ?? "Process not Started");
 
   const showBiometricDetail = biometricStatus === "Interview Date Announced" || biometricStatus === "Interview Over";
   const showInterviewDetail = interviewStatus === "Interview Date Announced" || interviewStatus === "Interview Over";
@@ -36,22 +52,22 @@ export function VisaForm({ presets }: { presets: Record<PresetField, string[]> }
       <Section title="Applicant">
         <Grid>
           <Field label="Name" required>
-            <input name="name" className="field" placeholder="Full name" required />
+            <input name="name" className="field" placeholder="Full name" required defaultValue={a?.name} />
           </Field>
           <Field label="Email" required>
-            <input name="email" type="email" className="field" placeholder="name@example.com" required />
+            <input name="email" type="email" className="field" placeholder="name@example.com" required defaultValue={a?.email} />
           </Field>
           <Field label="Country" required hint="Drives the dashboard breakdown">
-            <Combobox name="country" presets={presets.country} placeholder="Select or type a country" required />
+            <Combobox name="country" presets={presets.country} defaultValue={a?.country} placeholder="Select or type a country" required />
           </Field>
           <Field label="Visa type" required>
-            <Combobox name="visaType" presets={presets.visa_type} placeholder="Select or type a visa type" required />
+            <Combobox name="visaType" presets={presets.visa_type} defaultValue={a?.visaType} placeholder="Select or type a visa type" required />
           </Field>
           <Field label="Vendor">
-            <Combobox name="vendor" presets={presets.vendor} placeholder="Select or type a vendor" />
+            <Combobox name="vendor" presets={presets.vendor} defaultValue={a?.vendor ?? ""} placeholder="Select or type a vendor" />
           </Field>
           <Field label="Approved by">
-            <Combobox name="approvedBy" presets={presets.approved_by} placeholder="Select or type" />
+            <Combobox name="approvedBy" presets={presets.approved_by} defaultValue={a?.approvedBy ?? ""} placeholder="Select or type" />
           </Field>
         </Grid>
       </Section>
@@ -70,13 +86,13 @@ export function VisaForm({ presets }: { presets: Record<PresetField, string[]> }
         <Section title="Form">
           <Grid>
             <Field label="Form name">
-              <Combobox name="formName" presets={presets.form_name} defaultValue="DS 160" placeholder="e.g. DS 160" />
+              <Combobox name="formName" presets={presets.form_name} defaultValue={a?.formName ?? "DS 160"} placeholder="e.g. DS 160" />
             </Field>
             <Field label="Form fill-up">
-              <Select name="formFillup" options={FORM_FILLUP} placeholder="—" />
+              <Select name="formFillup" options={FORM_FILLUP} placeholder="—" defaultValue={a?.formFillup ?? undefined} />
             </Field>
             <Field label="Form submission">
-              <Select name="formSubmission" options={FORM_SUBMISSION} placeholder="—" />
+              <Select name="formSubmission" options={FORM_SUBMISSION} placeholder="—" defaultValue={a?.formSubmission ?? undefined} />
             </Field>
           </Grid>
         </Section>
@@ -87,20 +103,15 @@ export function VisaForm({ presets }: { presets: Record<PresetField, string[]> }
         <Section title="Biometric">
           <Grid>
             <Field label="Biometric status">
-              <Select
-                name="biometricStatus"
-                options={DAY_STATUS}
-                value={biometricStatus}
-                onChange={setBiometricStatus}
-              />
+              <Select name="biometricStatus" options={DAY_STATUS} value={biometricStatus} onChange={setBiometricStatus} />
             </Field>
             {showBiometricDetail && (
               <>
                 <Field label="Biometric date">
-                  <input name="biometricDate" type="date" className="field" />
+                  <input name="biometricDate" type="date" className="field" defaultValue={a?.biometricDate ?? undefined} />
                 </Field>
                 <Field label="Biometric location">
-                  <Combobox name="biometricLocation" presets={presets.location} placeholder="City" />
+                  <Combobox name="biometricLocation" presets={presets.location} defaultValue={a?.biometricLocation ?? ""} placeholder="City" />
                 </Field>
               </>
             )}
@@ -113,20 +124,15 @@ export function VisaForm({ presets }: { presets: Record<PresetField, string[]> }
         <Section title="Interview">
           <Grid>
             <Field label="Interview status">
-              <Select
-                name="interviewStatus"
-                options={DAY_STATUS}
-                value={interviewStatus}
-                onChange={setInterviewStatus}
-              />
+              <Select name="interviewStatus" options={DAY_STATUS} value={interviewStatus} onChange={setInterviewStatus} />
             </Field>
             {showInterviewDetail && (
               <>
                 <Field label="Interview date">
-                  <input name="interviewDate" type="date" className="field" />
+                  <input name="interviewDate" type="date" className="field" defaultValue={a?.interviewDate ?? undefined} />
                 </Field>
                 <Field label="Interview location">
-                  <Combobox name="interviewLocation" presets={presets.location} placeholder="City" />
+                  <Combobox name="interviewLocation" presets={presets.location} defaultValue={a?.interviewLocation ?? ""} placeholder="City" />
                 </Field>
               </>
             )}
@@ -141,13 +147,13 @@ export function VisaForm({ presets }: { presets: Record<PresetField, string[]> }
             <Select name="finalResult" options={FINAL_RESULT} value={finalResult} onChange={setFinalResult} />
           </Field>
           <Field label="Doc signed">
-            <Select name="docSigned" options={DOC_SIGNED} defaultValue="Not Sent" />
+            <Select name="docSigned" options={DOC_SIGNED} defaultValue={a?.docSigned ?? "Not Sent"} />
           </Field>
           <Field label="Visa validity from">
-            <input name="validFrom" type="date" className="field" />
+            <input name="validFrom" type="date" className="field" defaultValue={a?.validFrom ?? undefined} />
           </Field>
           <Field label="Visa validity to">
-            <input name="validTo" type="date" className="field" />
+            <input name="validTo" type="date" className="field" defaultValue={a?.validTo ?? undefined} />
           </Field>
         </Grid>
       </Section>
@@ -159,23 +165,23 @@ export function VisaForm({ presets }: { presets: Record<PresetField, string[]> }
       >
         <Grid>
           <Field label="Vendor fees" required={granted}>
-            <input name="vendorFees" type="number" min="0" step="1" className="field" placeholder="₹" required={granted} />
+            <input name="vendorFees" type="number" min="0" step="1" className="field" placeholder="₹" required={granted} defaultValue={a?.vendorFees ?? undefined} />
           </Field>
           <Field label="Visa fees" required={granted}>
-            <input name="visaFees" type="number" min="0" step="1" className="field" placeholder="₹" required={granted} />
+            <input name="visaFees" type="number" min="0" step="1" className="field" placeholder="₹" required={granted} defaultValue={a?.visaFees ?? undefined} />
           </Field>
           <Field label="Flight cost" hint="Optional">
-            <input name="flightCost" type="number" min="0" step="1" className="field" placeholder="₹" />
+            <input name="flightCost" type="number" min="0" step="1" className="field" placeholder="₹" defaultValue={a?.flightCost ?? undefined} />
           </Field>
           <Field label="Stay (days)" hint="Optional">
-            <input name="stayDays" type="number" min="0" step="1" className="field" placeholder="e.g. 14" />
+            <input name="stayDays" type="number" min="0" step="1" className="field" placeholder="e.g. 14" defaultValue={a?.stayDays ?? undefined} />
           </Field>
         </Grid>
       </Section>
 
       {/* Notes */}
       <Section title="Notes">
-        <textarea name="notes" className="field min-h-20" placeholder="Anything worth remembering…" />
+        <textarea name="notes" className="field min-h-20" placeholder="Anything worth remembering…" defaultValue={a?.notes ?? undefined} />
       </Section>
 
       {state.error && (
@@ -188,11 +194,11 @@ export function VisaForm({ presets }: { presets: Record<PresetField, string[]> }
       )}
 
       <div className="flex items-center justify-end gap-2.5 pt-1">
-        <Link href="/applications" className="btn btn-ghost">
+        <Link href={cancelHref} className="btn btn-ghost">
           Cancel
         </Link>
         <button type="submit" className="btn btn-primary" disabled={pending}>
-          {pending ? "Saving…" : "Save application"}
+          {pending ? "Saving…" : submitLabel}
         </button>
       </div>
     </form>

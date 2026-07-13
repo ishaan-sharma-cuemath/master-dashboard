@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { notFound } from "next/navigation";
+import { DeleteButton } from "@/components/applications/DeleteButton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { requireUser } from "@/lib/auth-dal";
 import { fmtDate, fmtMoney, fmtValidity } from "@/lib/format";
@@ -31,6 +32,12 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
         <h1 className="text-[24px] font-semibold tracking-[-0.01em]">{a.name}</h1>
         <StatusBadge value={a.finalResult} />
         <StatusBadge value={stage.label} tone={stage.tone} size="sm" />
+        <div className="ml-auto flex items-center gap-2.5">
+          <Link href={`/applications/${a.id}/edit`} className="btn btn-ghost">
+            <Pencil size={15} /> Edit
+          </Link>
+          <DeleteButton id={a.id} name={a.name} />
+        </div>
       </header>
       <p className="mt-1 font-mono text-[12px]" style={{ color: "var(--ink-muted)" }}>
         {a.email}
