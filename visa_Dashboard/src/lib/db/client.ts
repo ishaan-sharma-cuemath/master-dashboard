@@ -16,18 +16,32 @@ function createDb(): BetterSQLite3Database<typeof schema> {
   const sqlite = new Database(resolveDbPath(process.env.DATABASE_URL));
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");
-  const db = drizzle(sqlite, { schema });
-  // Idempotent, sub-ms when up to date — guarantees the schema exists in dev.
+  const drizzled = drizzle(sqlite, { schema });
+  // Idempotent, sub-ms when up to date — guarantees the schema exists.
   try {
-    migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
+    migrate(drizzled, { migrationsFolder: path.join(process.cwd(), "drizzle") });
   } catch {
     // Migrations folder absent (e.g. fresh checkout before db:generate) — seed script handles it.
   }
-  return db;
+  return drizzled;
 }
 
-// Cache across HMR reloads in dev so we don't leak connections.
+// Cache across HMR reloads (dev) and reuse a single connection per process (prod).
 const globalForDb = globalThis as unknown as { __db?: BetterSQLite3Database<typeof schema> };
 
-export const db = globalForDb.__db ?? createDb();
-if (process.env.NODE_ENV !== "production") globalForDb.__db = db;
+function getDb(): BetterSQLite3Database<typeof schema> {
+  if (!globalForDb.__db) globalForDb.__db = createDb();
+  return globalForDb.__db;
+}
+
+// Open SQLite lazily, on first real use. `next build` imports route modules to
+// analyze them; this proxy ensures that never opens a connection or creates the
+// data directory — important on hosts (e.g. Render) where the persistent data
+// disk isn't writable during the build step.
+export const db = new Proxy({} as BetterSQLite3Database<typeof schema>, {
+  get(_target, prop) {
+    const real = getDb() as unknown as Record<string | symbol, unknown>;
+    const value = real[prop];
+    return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(real) : value;
+  },
+});
