@@ -17,20 +17,17 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { PersonRow } from "@/lib/db/schema";
 import { GripVertical, Plus, X } from "lucide-react";
-import { fieldStyle, inputCls, selectCls, type DraftStage } from "./draft";
+import { fieldStyle, inputCls, type DraftStage } from "./draft";
 
 function StageRowItem({
   stage,
   index,
-  people,
   onPatch,
   onRemove,
 }: {
   stage: DraftStage;
   index: number;
-  people: PersonRow[];
   onPatch: (patch: Partial<DraftStage>) => void;
   onRemove: () => void;
 }) {
@@ -64,23 +61,10 @@ function StageRowItem({
       <input
         value={stage.name}
         onChange={(e) => onPatch({ name: e.target.value })}
-        placeholder="Stage name"
+        placeholder="Stage name (e.g. Design, Build, Launch)"
         className={`${inputCls} h-8 min-w-0 flex-1`}
         style={fieldStyle}
       />
-      <select
-        value={stage.ownerId}
-        onChange={(e) => onPatch({ ownerId: e.target.value })}
-        aria-label="Stage owner"
-        className={`${selectCls} h-8 w-[104px] shrink-0`}
-        style={fieldStyle}
-      >
-        {people.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-      </select>
       <input
         type="date"
         value={stage.targetDate}
@@ -104,13 +88,9 @@ function StageRowItem({
 
 export function StepStages({
   stages,
-  people,
-  defaultOwnerId,
   onChange,
 }: {
   stages: DraftStage[];
-  people: PersonRow[];
-  defaultOwnerId: string;
   onChange: (stages: DraftStage[]) => void;
 }) {
   const sensors = useSensors(
@@ -127,14 +107,13 @@ export function StepStages({
     onChange(arrayMove(stages, from, to));
   };
 
-  const addStage = () =>
-    onChange([...stages, { id: crypto.randomUUID(), name: "", ownerId: defaultOwnerId, targetDate: "" }]);
+  const addStage = () => onChange([...stages, { id: crypto.randomUUID(), name: "", targetDate: "" }]);
 
   return (
     <div className="flex flex-col gap-2.5">
       <p className="text-[13px]" style={{ color: "var(--ink-secondary)" }}>
-        Stages track delivery in order — the first one becomes <span className="font-mono text-[11.5px]">current</span> on
-        create. Drag to reorder.
+        Write this project&apos;s stages in order — the first becomes{" "}
+        <span className="font-mono text-[11.5px]">current</span> on create. Drag to reorder.
       </p>
 
       {stages.length === 0 ? (
@@ -153,7 +132,6 @@ export function StepStages({
                   key={s.id}
                   stage={s}
                   index={i}
-                  people={people}
                   onPatch={(patch) => onChange(stages.map((x) => (x.id === s.id ? { ...x, ...patch } : x)))}
                   onRemove={() => onChange(stages.filter((x) => x.id !== s.id))}
                 />

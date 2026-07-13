@@ -1,6 +1,5 @@
 import { HealthBadge } from "@/components/health/HealthBadge";
 import { OversightActions } from "@/components/project/OversightActions";
-import { Avatar } from "@/components/ui/Avatar";
 import { TagChip } from "@/components/ui/TagChip";
 import { db } from "@/lib/db/client";
 import { statusUpdates } from "@/lib/db/schema";
@@ -47,9 +46,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <HealthBadge dh={p.displayHealth} lifecycle={p.lifecycle} />
           </div>
           <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px]" style={{ color: "var(--ink-muted)" }}>
-            <span className="flex items-center gap-1.5">
-              <Avatar person={p.lead} size={18} /> {p.lead.name}
-            </span>
+            {(p.ownerName || p.ownerEmail) && (
+              <span className="flex items-center gap-1.5">
+                Owner: <span style={{ color: "var(--ink-secondary)" }}>{p.ownerName || p.ownerEmail}</span>
+              </span>
+            )}
             {folder && (
               <span className="flex items-center gap-1.5">
                 <span className="h-[7px] w-[7px] rounded-full" style={{ background: folder.color ?? "var(--line-strong)" }} />
@@ -104,7 +105,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
         <ol className="mt-4 flex flex-col gap-0.5">
           {p.stages.map((s) => {
-            const owner = peopleById.get(s.ownerId);
             const done = s.state === "done";
             const current = s.state === "current";
             return (
@@ -122,7 +122,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                   {s.name}
                 </span>
                 <span className="ml-auto flex items-center gap-2.5 text-[12px]" style={{ color: "var(--ink-muted)" }}>
-                  {owner && <Avatar person={owner} size={17} />}
                   {s.targetDate && <span className="tabular-nums">{fmtDate(s.targetDate)}</span>}
                 </span>
               </li>
@@ -147,6 +146,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             flagged={p.flagged}
             flagNote={p.flagNote}
             daysSinceRequest={daysSince(p.statusRequestedAt, new Date())}
+            ownerName={p.ownerName}
+            ownerEmail={p.ownerEmail}
           />
         </div>
       </section>

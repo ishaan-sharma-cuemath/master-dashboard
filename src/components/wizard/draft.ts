@@ -2,7 +2,8 @@ import type { FolderRow, Health, PersonRow, TagGroupRow, TagRow } from "@/lib/db
 
 /* ————— wizard draft model (persisted to localStorage) ————— */
 
-export type DraftStage = { id: string; name: string; ownerId: string; targetDate: string };
+/** Stages are just named phases in order — no per-stage owner (Akash reviews, he doesn't own stages). */
+export type DraftStage = { id: string; name: string; targetDate: string };
 export type DraftLink = { id: string; label: string; url: string };
 
 export type WizardDraft = {
@@ -12,6 +13,8 @@ export type WizardDraft = {
   folderId: string;
   tagIds: string[];
   leadId: string;
+  ownerName: string;
+  ownerEmail: string;
   startDate: string;
   targetDate: string;
   stages: DraftStage[];
@@ -29,6 +32,8 @@ export function emptyDraft(defaults: { leadId: string; folderId: string }): Wiza
     folderId: defaults.folderId,
     tagIds: [],
     leadId: defaults.leadId,
+    ownerName: "",
+    ownerEmail: "",
     startDate: "",
     targetDate: "",
     stages: [],

@@ -81,34 +81,40 @@ export function StepBasics({
         />
       </Field>
 
+      <Field label="Folder">
+        <select
+          value={draft.folderId}
+          onChange={(e) => onChange({ folderId: e.target.value })}
+          className={selectCls}
+          style={fieldStyle}
+        >
+          {data.folders.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Folder">
-          <select
-            value={draft.folderId}
-            onChange={(e) => onChange({ folderId: e.target.value })}
-            className={selectCls}
+        <Field label="Owner" hint="who runs this project">
+          <input
+            value={draft.ownerName}
+            onChange={(e) => onChange({ ownerName: e.target.value })}
+            placeholder="e.g. Priya Menon"
+            className={inputCls}
             style={fieldStyle}
-          >
-            {data.folders.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
-        <Field label="Lead">
-          <select
-            value={draft.leadId}
-            onChange={(e) => onChange({ leadId: e.target.value })}
-            className={selectCls}
+        <Field label="Owner email" hint="gets status requests">
+          <input
+            type="email"
+            value={draft.ownerEmail}
+            onChange={(e) => onChange({ ownerEmail: e.target.value })}
+            placeholder="name@cuemath.com"
+            className={inputCls}
             style={fieldStyle}
-          >
-            {data.people.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
       </div>
 

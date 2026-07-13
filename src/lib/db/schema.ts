@@ -70,6 +70,10 @@ export const projects = sqliteTable(
       .notNull()
       .references(() => people.id),
     lifecycle: text("lifecycle", { enum: LIFECYCLES }).notNull().default("in_progress"),
+    // Project owner contact — the person who runs this project's portal and
+    // receives "ask for status" emails.
+    ownerName: text("owner_name"),
+    ownerEmail: text("owner_email"),
     startDate: text("start_date"),
     targetDate: text("target_date"),
     externalLinks: text("external_links", { mode: "json" }).$type<ExternalLink[]>().notNull().default([]),

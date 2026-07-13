@@ -25,7 +25,8 @@ function sanitizeDraft(raw: Partial<WizardDraft>, data: WizardData): WizardDraft
   if (!peopleIds.has(base.leadId)) base.leadId = data.defaults.leadId;
   base.tagIds = (base.tagIds ?? []).filter((id) => tagIds.has(id));
   base.relatedProjectIds = (base.relatedProjectIds ?? []).filter((id) => projectIds.has(id));
-  base.stages = (base.stages ?? []).map((s) => ({ ...s, ownerId: peopleIds.has(s.ownerId) ? s.ownerId : base.leadId }));
+  // Sanitize old drafts that carried a per-stage ownerId — stages are now name + date only.
+  base.stages = (base.stages ?? []).map((s) => ({ id: s.id, name: s.name ?? "", targetDate: s.targetDate ?? "" }));
   base.links = base.links ?? [];
   return base;
 }
@@ -84,7 +85,6 @@ export function WizardShell({ data }: { data: WizardData }) {
       stages: template.stages.map((s) => ({
         id: crypto.randomUUID(),
         name: s.name,
-        ownerId: d.leadId,
         targetDate: format(addDays(today, s.offsetDays), "yyyy-MM-dd"),
       })),
     }));
@@ -102,12 +102,14 @@ export function WizardShell({ data }: { data: WizardData }) {
       description: draft.description,
       folderId: draft.folderId,
       leadId: draft.leadId,
+      ownerName: draft.ownerName.trim() || null,
+      ownerEmail: draft.ownerEmail.trim() || null,
       startDate: draft.startDate || null,
       targetDate: draft.targetDate || null,
       tagIds: draft.tagIds,
       stages: draft.stages
         .filter((s) => s.name.trim().length > 0)
-        .map((s) => ({ name: s.name.trim(), ownerId: s.ownerId, targetDate: s.targetDate || null })),
+        .map((s) => ({ name: s.name.trim(), targetDate: s.targetDate || null })),
       externalLinks: includeExtras
         ? draft.links
             .filter((l) => l.url.trim().length > 0)
@@ -172,14 +174,7 @@ export function WizardShell({ data }: { data: WizardData }) {
       <div className="mt-6 min-h-[280px]">
         {step === 0 && <StepTemplate selected={draft.templateKey} onSelect={selectTemplate} />}
         {step === 1 && <StepBasics draft={draft} data={data} onChange={patch} />}
-        {step === 2 && (
-          <StepStages
-            stages={draft.stages}
-            people={data.people}
-            defaultOwnerId={draft.leadId}
-            onChange={(stages) => patch({ stages })}
-          />
-        )}
+        {step === 2 && <StepStages stages={draft.stages} onChange={(stages) => patch({ stages })} />}
         {step === 3 && <StepExtras draft={draft} data={data} onChange={patch} />}
       </div>
 
