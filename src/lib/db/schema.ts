@@ -74,6 +74,9 @@ export const projects = sqliteTable(
     // receives "ask for status" emails.
     ownerName: text("owner_name"),
     ownerEmail: text("owner_email"),
+    // The portal reports its status UP via this endpoint (GET → health+json).
+    statusEndpoint: text("status_endpoint"),
+    statusToken: text("status_token"), // optional bearer token the portal expects
     startDate: text("start_date"),
     targetDate: text("target_date"),
     externalLinks: text("external_links", { mode: "json" }).$type<ExternalLink[]>().notNull().default([]),
@@ -179,6 +182,24 @@ export const progressSnapshots = sqliteTable(
   },
   (t) => [index("snapshots_project_time_idx").on(t.projectId, t.takenAt)],
 );
+
+/** Cached snapshot of a portal's self-reported status (from its GET /api/status). */
+export const projectStatus = sqliteTable("project_status", {
+  projectId: text("project_id")
+    .primaryKey()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["pass", "warn", "fail", "unknown"] }).notNull().default("unknown"),
+  progress: integer("progress"), // 0–100
+  stage: text("stage"),
+  summary: text("summary"),
+  rawJson: text("raw_json"),
+  portalUpdatedAt: text("portal_updated_at"),
+  lastCheckedAt: text("last_checked_at"),
+  lastSuccessAt: text("last_success_at"),
+  consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+});
+
+export type ProjectStatusRow = typeof projectStatus.$inferSelect;
 
 export type PersonRow = typeof people.$inferSelect;
 export type FolderRow = typeof folders.$inferSelect;

@@ -1,10 +1,11 @@
 import { HealthBadge } from "@/components/health/HealthBadge";
 import { OversightActions } from "@/components/project/OversightActions";
+import { StatusEndpointField } from "@/components/project/StatusEndpointField";
 import { TagChip } from "@/components/ui/TagChip";
 import { db } from "@/lib/db/client";
 import { statusUpdates } from "@/lib/db/schema";
 import { daysSince } from "@/lib/derive";
-import { fmtDate, fmtDateTime, relAge } from "@/lib/format";
+import { fmtDate, fmtDateTime, relAge, sinceLabel } from "@/lib/format";
 import { getWorkspace } from "@/lib/queries/projects";
 import { desc, eq } from "drizzle-orm";
 import { ArrowLeft, ArrowUpRight, Check } from "lucide-react";
@@ -91,6 +92,24 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           {p.description}
         </p>
       )}
+
+      {/* ————— Reported status (pulled up from the project's own portal) ————— */}
+      <section className="mt-8">
+        <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
+          Reported status
+        </h2>
+        <div className="mt-3 flex flex-col gap-2">
+          <StatusEndpointField projectId={p.id} endpoint={p.statusEndpoint} hasToken={Boolean(p.statusToken)} />
+          {p.portal && (
+            <div className="text-[13px]" style={{ color: "var(--ink-secondary)" }}>
+              {p.portal.summary ? <span>“{p.portal.summary}”</span> : <span style={{ color: "var(--ink-muted)" }}>No summary reported.</span>}
+              <span className="ml-2 font-mono text-[11.5px]" style={{ color: p.portal.fresh ? "var(--ink-muted)" : "var(--health-stale-text)" }}>
+                · {p.portal.fresh ? "checked" : "no signal · checked"} {sinceLabel(p.portal.checkedAt)}
+              </span>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* ————— Stages: current level + progress ————— */}
       <section className="mt-8">

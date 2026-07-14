@@ -26,6 +26,18 @@ export async function toggleFlag(projectId: string, on: boolean, note?: string):
   return { ok: true };
 }
 
+/** Connect (or clear) the portal status endpoint this project reports up from. */
+export async function setStatusEndpoint(projectId: string, url: string, token: string): Promise<{ ok: true }> {
+  const id = z.string().min(1).parse(projectId);
+  db.update(projects)
+    .set({ statusEndpoint: url.trim() || null, statusToken: token.trim() || null, updatedAt: nowIso() })
+    .where(eq(projects.id, id))
+    .run();
+  revalidatePath("/");
+  revalidatePath(`/projects/${id}`);
+  return { ok: true };
+}
+
 /** Set/update the project owner's contact (used for status-request emails). */
 export async function setOwner(projectId: string, name: string, email: string): Promise<{ ok: true }> {
   const id = z.string().min(1).parse(projectId);

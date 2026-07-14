@@ -8,8 +8,7 @@ import Link from "next/link";
 /** Refined tile: status dot + name + owner, thin stage bar, one quiet meta line. */
 export function ProjectCard({ project: p, index = 0 }: { project: DerivedProject; index?: number }) {
   const stale = p.displayHealth.kind === "stale";
-  const metaNote =
-    p.currentStage?.name ?? (p.stages.length === 0 ? "No stages yet" : "All stages done");
+  const metaNote = p.portal?.summary || p.stageLabel;
 
   return (
     <div

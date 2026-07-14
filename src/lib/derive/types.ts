@@ -33,4 +33,13 @@ export type DerivedProject = ProjectRow & {
   daysBehind: number;
   isWatermelon: boolean;
   daysSinceUpdate: number | null;
+  /** Current stage label — the portal's reported stage when it reports up, else the local stage. */
+  stageLabel: string;
+  /** Live status pulled from the project's own portal; null when it doesn't report up. */
+  portal: {
+    summary: string | null;
+    stage: string | null;
+    checkedAt: string | null;
+    fresh: boolean;
+  } | null;
 };

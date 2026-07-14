@@ -4,6 +4,7 @@ import {
   folders,
   people,
   projects,
+  projectStatus,
   projectTags,
   relations,
   stages,
@@ -22,8 +23,19 @@ import {
   getStaleness,
   isWatermelon,
   type DerivedProject,
+  type DisplayHealth,
   type RelatednessContext,
 } from "../derive";
+
+const PORTAL_STALE_MS = 20 * 60 * 1000;
+
+/** Map a portal's normalized status to a display health. */
+function portalHealth(status: "pass" | "warn" | "fail" | "unknown"): DisplayHealth {
+  if (status === "pass") return { kind: "rag", health: "on_track", ring: "solid" };
+  if (status === "warn") return { kind: "rag", health: "at_risk", ring: "solid" };
+  if (status === "fail") return { kind: "rag", health: "off_track", ring: "solid" };
+  return { kind: "stale" };
+}
 
 export type Workspace = {
   projects: DerivedProject[];
@@ -46,6 +58,8 @@ export function getWorkspace(now: Date = new Date()): Workspace {
   const stageRows = db.select().from(stages).all();
   const relRows = db.select().from(relations).all();
   const updateRows = db.select().from(statusUpdates).orderBy(desc(statusUpdates.createdAt)).all();
+  const statusById = new Map(db.select().from(projectStatus).all().map((s) => [s.projectId, s]));
+  const nowMs = now.getTime();
 
   const peopleById = new Map(peopleRows.map((p) => [p.id, p]));
   const tagsById = new Map(tagRows.map((t) => [t.id, t]));
@@ -99,8 +113,26 @@ export function getWorkspace(now: Date = new Date()): Workspace {
     const pStages = stagesByProject.get(p.id) ?? [];
     const latestUpdate = latestUpdateByProject.get(p.id) ?? null;
     const staleness = getStaleness(latestUpdate?.createdAt ?? null, p.updateCadenceDays, p.lifecycle, now);
-    const displayHealth = getDisplayHealth(p.lifecycle, latestUpdate, staleness);
     const { signal, daysBehind } = getScheduleSignal(pStages, now);
+    const currentStage = getCurrentStage(pStages);
+    let displayHealth = getDisplayHealth(p.lifecycle, latestUpdate, staleness);
+    let progressPct = Math.round(getProgress(pStages) * 100);
+    let stageLabel = currentStage?.name ?? (pStages.length ? "All stages done" : "No stages yet");
+    let portal: DerivedProject["portal"] = null;
+
+    // Reflect-up: a project with a status endpoint takes its health/progress from
+    // the cached portal snapshot. A quiet or unreachable portal reads grey (stale),
+    // never fake-green.
+    if (p.statusEndpoint) {
+      const snap = statusById.get(p.id) ?? null;
+      const succeededMs = snap?.lastSuccessAt ? new Date(snap.lastSuccessAt).getTime() : 0;
+      const fresh = Boolean(snap && succeededMs > 0 && nowMs - succeededMs < PORTAL_STALE_MS && snap.status !== "unknown");
+      displayHealth = fresh ? portalHealth(snap!.status) : { kind: "stale" };
+      if (fresh && snap?.progress != null) progressPct = snap.progress;
+      if (snap?.stage) stageLabel = snap.stage;
+      portal = { summary: snap?.summary ?? null, stage: snap?.stage ?? null, checkedAt: snap?.lastCheckedAt ?? null, fresh };
+    }
+
     return {
       ...p,
       stages: pStages,
@@ -109,8 +141,10 @@ export function getWorkspace(now: Date = new Date()): Workspace {
       latestUpdate,
       displayHealth,
       staleness,
-      progressPct: Math.round(getProgress(pStages) * 100),
-      currentStage: getCurrentStage(pStages),
+      progressPct,
+      currentStage,
+      stageLabel,
+      portal,
       scheduleSignal: signal,
       daysBehind,
       isWatermelon: isWatermelon(displayHealth, signal),

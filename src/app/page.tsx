@@ -3,6 +3,7 @@ import { FolderSection } from "@/components/home/FolderSection";
 import { ProjectCard } from "@/components/home/ProjectCard";
 import { ViewSwitcher } from "@/components/home/ViewSwitcher";
 import { AppShell } from "@/components/shell/AppShell";
+import { AutoPoll } from "@/components/shell/AutoPoll";
 import { GraphView } from "@/components/graph/GraphView";
 import { needsAttentionSort, orderFolderSection } from "@/lib/derive";
 import { applyFilters, hasActiveFilters, type FilterParams } from "@/lib/queries/filters";
@@ -105,6 +106,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Hom
       searchQuery={sp.q}
     >
       <div className="mx-auto max-w-[1200px]">
+        <AutoPoll />
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-[21px] font-semibold tracking-[-0.01em]">Projects</h1>
           <span className="text-[12.5px]" style={{ color: "var(--ink-muted)" }}>

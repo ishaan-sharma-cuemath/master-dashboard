@@ -19,6 +19,17 @@ export function fmtDateTime(iso: string): string {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
+/** Compact "time since" for portal checks: "just now" / "3m ago" / "2h ago" / "4d ago". */
+export function sinceLabel(iso: string | null): string {
+  if (!iso) return "never";
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
+
 export function initials(name: string): string {
   return name
     .split(/\s+/)
