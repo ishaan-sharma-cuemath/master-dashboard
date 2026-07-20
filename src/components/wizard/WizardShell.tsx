@@ -100,6 +100,7 @@ export function WizardShell({ data }: { data: WizardData }) {
     const input: CreateProjectInput = {
       name: draft.name.trim(),
       description: draft.description,
+      shape: draft.shape,
       folderId: draft.folderId,
       leadId: draft.leadId,
       ownerName: draft.ownerName.trim() || null,

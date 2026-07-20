@@ -81,20 +81,35 @@ export function StepBasics({
         />
       </Field>
 
-      <Field label="Folder">
-        <select
-          value={draft.folderId}
-          onChange={(e) => onChange({ folderId: e.target.value })}
-          className={selectCls}
-          style={fieldStyle}
-        >
-          {data.folders.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Folder">
+          <select
+            value={draft.folderId}
+            onChange={(e) => onChange({ folderId: e.target.value })}
+            className={selectCls}
+            style={fieldStyle}
+          >
+            {data.folders.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Type" hint="how status is shown">
+          <select
+            value={draft.shape}
+            onChange={(e) => onChange({ shape: e.target.value as WizardDraft["shape"] })}
+            className={selectCls}
+            style={fieldStyle}
+          >
+            <option value="linear">Staged project (stages + %)</option>
+            <option value="pipeline">Pipeline / tracker (breakdown)</option>
+            <option value="metric">Metric / KPI (value vs goal)</option>
+            <option value="other">Other (status line only)</option>
+          </select>
+        </Field>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Owner" hint="who runs this project">

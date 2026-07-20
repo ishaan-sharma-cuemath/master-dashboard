@@ -18,6 +18,32 @@ function clampProgress(v: unknown): number | null {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
+function num(v: unknown): number | null {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Optional source-defined headline metric: { label, value, target?, unit? } */
+function parseMetric(m: unknown): { label: string | null; value: number | null; target: number | null; unit: string | null } {
+  if (!m || typeof m !== "object") return { label: null, value: null, target: null, unit: null };
+  const o = m as Record<string, unknown>;
+  return {
+    label: o.label != null ? String(o.label) : null,
+    value: num(o.value),
+    target: num(o.target),
+    unit: o.unit != null ? String(o.unit) : null,
+  };
+}
+
+/** Optional pipeline breakdown → segmented bar. */
+function parseSegments(s: unknown): { label: string; value: number }[] | null {
+  if (!Array.isArray(s)) return null;
+  const out = s
+    .map((x) => (x && typeof x === "object" ? { label: String((x as Record<string, unknown>).label ?? ""), value: num((x as Record<string, unknown>).value) ?? 0 } : null))
+    .filter((x): x is { label: string; value: number } => x != null && x.label.length > 0);
+  return out.length ? out : null;
+}
+
 const POLL_TIMEOUT_MS = 5000;
 
 export type PollOutcome = { projectId: string; name: string; ok: boolean; status: string; reason?: string };
@@ -52,12 +78,18 @@ export async function pollProject(project: {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = (await res.json()) as Record<string, unknown>;
 
+    const metric = parseMetric(body.metric);
     const row: ProjectStatusRow = {
       projectId: project.id,
       status: normalizeStatus(body.status),
       progress: clampProgress(body.progress),
       stage: body.stage != null ? String(body.stage) : null,
-      summary: body.summary != null ? String(body.summary) : null,
+      summary: (body.summary ?? body.statusLine) != null ? String(body.summary ?? body.statusLine) : null,
+      metricLabel: metric.label,
+      metricValue: metric.value,
+      metricTarget: metric.target,
+      metricUnit: metric.unit,
+      segments: parseSegments(body.segments),
       rawJson: JSON.stringify(body).slice(0, 4000),
       portalUpdatedAt: body.updatedAt != null ? String(body.updatedAt) : null,
       lastCheckedAt: now,

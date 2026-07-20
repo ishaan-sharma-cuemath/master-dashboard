@@ -130,7 +130,16 @@ export function getWorkspace(now: Date = new Date()): Workspace {
       displayHealth = fresh ? portalHealth(snap!.status) : { kind: "stale" };
       if (fresh && snap?.progress != null) progressPct = snap.progress;
       if (snap?.stage) stageLabel = snap.stage;
-      portal = { summary: snap?.summary ?? null, stage: snap?.stage ?? null, checkedAt: snap?.lastCheckedAt ?? null, fresh };
+      portal = {
+        summary: snap?.summary ?? null,
+        stage: snap?.stage ?? null,
+        metric: snap?.metricLabel
+          ? { label: snap.metricLabel, value: snap.metricValue, target: snap.metricTarget, unit: snap.metricUnit }
+          : null,
+        segments: snap?.segments ?? null,
+        checkedAt: snap?.lastCheckedAt ?? null,
+        fresh,
+      };
     }
 
     return {

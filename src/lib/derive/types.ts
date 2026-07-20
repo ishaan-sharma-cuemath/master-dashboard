@@ -39,6 +39,8 @@ export type DerivedProject = ProjectRow & {
   portal: {
     summary: string | null;
     stage: string | null;
+    metric: { label: string; value: number | null; target: number | null; unit: string | null } | null;
+    segments: { label: string; value: number }[] | null;
     checkedAt: string | null;
     fresh: boolean;
   } | null;

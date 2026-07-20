@@ -1,4 +1,4 @@
-import type { FolderRow, Health, PersonRow, TagGroupRow, TagRow } from "@/lib/db/schema";
+import type { FolderRow, Health, PersonRow, Shape, TagGroupRow, TagRow } from "@/lib/db/schema";
 
 /* ————— wizard draft model (persisted to localStorage) ————— */
 
@@ -10,6 +10,7 @@ export type WizardDraft = {
   templateKey: string | null;
   name: string;
   description: string;
+  shape: Shape;
   folderId: string;
   tagIds: string[];
   leadId: string;
@@ -29,6 +30,7 @@ export function emptyDraft(defaults: { leadId: string; folderId: string }): Wiza
     templateKey: null,
     name: "",
     description: "",
+    shape: "linear",
     folderId: defaults.folderId,
     tagIds: [],
     leadId: defaults.leadId,

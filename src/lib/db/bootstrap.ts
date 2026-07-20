@@ -1,15 +1,12 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { eq } from "drizzle-orm";
-import { snapshotValues } from "../derive";
 import * as schema from "./schema";
-import { folders, people, progressSnapshots, projects, stages, type StageState } from "./schema";
+import { folders, people, projects } from "./schema";
 
 export const VISA_DASHBOARD_URL = "https://visa-dashboard-gl1r.onrender.com";
 
 /**
  * First-boot seed. Runs after migration; only fires on a truly fresh database
- * (no people yet) — e.g. a newly-mounted Render disk. It's a no-op on any DB
- * that already has data, so it never clobbers what the user has added.
+ * (no people yet) — e.g. a newly-mounted Render disk. No-op once data exists.
  */
 export function ensureBootstrap(db: BetterSQLite3Database<typeof schema>): void {
   const alreadySetUp = db.select().from(people).limit(1).all().length > 0;
@@ -25,41 +22,18 @@ export function ensureBootstrap(db: BetterSQLite3Database<typeof schema>): void 
     .returning()
     .get();
 
-  const project = db
-    .insert(projects)
+  // The Visa Dashboard is a PIPELINE tracker (many applicants across stages), not a
+  // linear project — so no stages / fake %. Its status is reported up by its portal.
+  db.insert(projects)
     .values({
       name: "Visa Dashboard",
       description:
-        "Tracks Cuemath employees' US visa applications end to end — submission, biometric appointment, consulate interview, and final result.",
+        "Tracks Cuemath employees' US visa applications — submission, biometric, consulate interview, and final result across everyone in flight.",
+      shape: "pipeline",
       folderId: internal.id,
       leadId: akash.id,
       lifecycle: "in_progress",
       externalLinks: [{ label: "Open Visa Dashboard", url: VISA_DASHBOARD_URL }],
     })
-    .returning()
-    .get();
-
-  const stageDefs: { name: string; state: StageState }[] = [
-    { name: "Application Submission", state: "done" },
-    { name: "Biometric Interview", state: "done" },
-    { name: "Consulate Interview", state: "current" },
-    { name: "Final Result", state: "pending" },
-  ];
-  const now = new Date().toISOString();
-  stageDefs.forEach((s, i) =>
-    db
-      .insert(stages)
-      .values({
-        projectId: project.id,
-        name: s.name,
-        sortOrder: i,
-        ownerId: akash.id,
-        state: s.state,
-        completedAt: s.state === "done" ? now : null,
-      })
-      .run(),
-  );
-
-  const all = db.select().from(stages).where(eq(stages.projectId, project.id)).all();
-  db.insert(progressSnapshots).values({ projectId: project.id, ...snapshotValues(all) }).run();
+    .run();
 }

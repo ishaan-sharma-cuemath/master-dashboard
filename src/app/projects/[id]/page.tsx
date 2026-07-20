@@ -1,6 +1,7 @@
 import { HealthBadge } from "@/components/health/HealthBadge";
 import { OversightActions } from "@/components/project/OversightActions";
 import { StatusEndpointField } from "@/components/project/StatusEndpointField";
+import { SegmentBar, SegmentLegend } from "@/components/ui/SegmentBar";
 import { TagChip } from "@/components/ui/TagChip";
 import { db } from "@/lib/db/client";
 import { statusUpdates } from "@/lib/db/schema";
@@ -101,58 +102,77 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         <div className="mt-3 flex flex-col gap-2">
           <StatusEndpointField projectId={p.id} endpoint={p.statusEndpoint} hasToken={Boolean(p.statusToken)} />
           {p.portal && (
-            <div className="text-[13px]" style={{ color: "var(--ink-secondary)" }}>
-              {p.portal.summary ? <span>“{p.portal.summary}”</span> : <span style={{ color: "var(--ink-muted)" }}>No summary reported.</span>}
-              <span className="ml-2 font-mono text-[11.5px]" style={{ color: p.portal.fresh ? "var(--ink-muted)" : "var(--health-stale-text)" }}>
-                · {p.portal.fresh ? "checked" : "no signal · checked"} {sinceLabel(p.portal.checkedAt)}
-              </span>
-            </div>
+            <>
+              <div className="text-[13px]" style={{ color: "var(--ink-secondary)" }}>
+                {p.portal.summary ? <span>“{p.portal.summary}”</span> : <span style={{ color: "var(--ink-muted)" }}>No summary reported.</span>}
+                <span className="ml-2 font-mono text-[11.5px]" style={{ color: p.portal.fresh ? "var(--ink-muted)" : "var(--health-stale-text)" }}>
+                  · {p.portal.fresh ? "checked" : "no signal · checked"} {sinceLabel(p.portal.checkedAt)}
+                </span>
+              </div>
+              {/* Pipeline breakdown */}
+              {p.portal.segments && (
+                <div className="mt-1 flex flex-col gap-2">
+                  <SegmentBar segments={p.portal.segments} height={8} />
+                  <SegmentLegend segments={p.portal.segments} />
+                </div>
+              )}
+              {/* Headline metric (metric-shape / supporting figure) */}
+              {!p.portal.segments && p.portal.metric?.value != null && (
+                <div className="text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
+                  {p.portal.metric.label}: {p.portal.metric.value}
+                  {p.portal.metric.target != null ? ` / ${p.portal.metric.target}` : ""}
+                  {p.portal.metric.unit ? ` ${p.portal.metric.unit}` : ""}
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
 
-      {/* ————— Stages: current level + progress ————— */}
-      <section className="mt-8">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
-            Stages
-          </h2>
-          <span className="text-[13px] font-medium tabular-nums" style={{ color: "var(--ink-secondary)" }}>
-            {p.progressPct}% · {p.currentStage?.name ?? (p.stages.length ? "Complete" : "No stages")}
-          </span>
-        </div>
+      {/* ————— Stages — LINEAR projects only ————— */}
+      {p.shape === "linear" && (
+        <section className="mt-8">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
+              Stages
+            </h2>
+            <span className="text-[13px] font-medium tabular-nums" style={{ color: "var(--ink-secondary)" }}>
+              {p.progressPct}% · {p.currentStage?.name ?? (p.stages.length ? "Complete" : "No stages")}
+            </span>
+          </div>
 
-        <ol className="mt-4 flex flex-col gap-0.5">
-          {p.stages.map((s) => {
-            const done = s.state === "done";
-            const current = s.state === "current";
-            return (
-              <li key={s.id} className="flex items-center gap-3 py-2">
-                <StageMark done={done} current={current} blocked={s.state === "blocked"} />
-                <span
-                  className="text-[14px]"
-                  style={{
-                    color: done ? "var(--ink-muted)" : "var(--ink)",
-                    fontWeight: current ? 600 : 400,
-                    textDecoration: done ? "line-through" : "none",
-                    textDecorationColor: "var(--line-strong)",
-                  }}
-                >
-                  {s.name}
-                </span>
-                <span className="ml-auto flex items-center gap-2.5 text-[12px]" style={{ color: "var(--ink-muted)" }}>
-                  {s.targetDate && <span className="tabular-nums">{fmtDate(s.targetDate)}</span>}
-                </span>
+          <ol className="mt-4 flex flex-col gap-0.5">
+            {p.stages.map((s) => {
+              const done = s.state === "done";
+              const current = s.state === "current";
+              return (
+                <li key={s.id} className="flex items-center gap-3 py-2">
+                  <StageMark done={done} current={current} blocked={s.state === "blocked"} />
+                  <span
+                    className="text-[14px]"
+                    style={{
+                      color: done ? "var(--ink-muted)" : "var(--ink)",
+                      fontWeight: current ? 600 : 400,
+                      textDecoration: done ? "line-through" : "none",
+                      textDecorationColor: "var(--line-strong)",
+                    }}
+                  >
+                    {s.name}
+                  </span>
+                  <span className="ml-auto flex items-center gap-2.5 text-[12px]" style={{ color: "var(--ink-muted)" }}>
+                    {s.targetDate && <span className="tabular-nums">{fmtDate(s.targetDate)}</span>}
+                  </span>
+                </li>
+              );
+            })}
+            {p.stages.length === 0 && (
+              <li className="py-2 text-[13.5px]" style={{ color: "var(--ink-muted)" }}>
+                No stages yet.
               </li>
-            );
-          })}
-          {p.stages.length === 0 && (
-            <li className="py-2 text-[13.5px]" style={{ color: "var(--ink-muted)" }}>
-              No stages yet.
-            </li>
-          )}
-        </ol>
-      </section>
+            )}
+          </ol>
+        </section>
+      )}
 
       {/* ————— Oversight: flag / ask for status ————— */}
       <section className="mt-9">

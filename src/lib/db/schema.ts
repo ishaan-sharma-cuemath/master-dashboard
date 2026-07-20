@@ -24,6 +24,12 @@ export type Health = (typeof HEALTHS)[number];
 export const STAGE_STATES = ["pending", "current", "done", "blocked"] as const;
 export type StageState = (typeof STAGE_STATES)[number];
 
+/** How a project's progress is meaningfully expressed. Only `health` is normalized across shapes. */
+export const SHAPES = ["linear", "pipeline", "metric", "other"] as const;
+export type Shape = (typeof SHAPES)[number];
+
+export type StatusSegment = { label: string; value: number };
+
 export type ExternalLink = { label: string; url: string };
 export type AutoChange = {
   kind: "stage_done" | "target_moved" | "owner_changed" | "progress_delta";
@@ -70,6 +76,9 @@ export const projects = sqliteTable(
       .notNull()
       .references(() => people.id),
     lifecycle: text("lifecycle", { enum: LIFECYCLES }).notNull().default("in_progress"),
+    // Shape decides how status is shown: linear → stages+%, pipeline → breakdown,
+    // metric → value vs goal, other → status line only.
+    shape: text("shape", { enum: SHAPES }).notNull().default("linear"),
     // Project owner contact — the person who runs this project's portal and
     // receives "ask for status" emails.
     ownerName: text("owner_name"),
@@ -189,9 +198,16 @@ export const projectStatus = sqliteTable("project_status", {
     .primaryKey()
     .references(() => projects.id, { onDelete: "cascade" }),
   status: text("status", { enum: ["pass", "warn", "fail", "unknown"] }).notNull().default("unknown"),
-  progress: integer("progress"), // 0–100
-  stage: text("stage"),
-  summary: text("summary"),
+  progress: integer("progress"), // 0–100 (linear projects only)
+  stage: text("stage"), // linear projects only
+  summary: text("summary"), // the source-written status line (all shapes)
+  // Optional source-defined headline metric (never compared across projects)
+  metricLabel: text("metric_label"),
+  metricValue: real("metric_value"),
+  metricTarget: real("metric_target"),
+  metricUnit: text("metric_unit"),
+  // Optional breakdown for pipeline shapes → segmented bar
+  segments: text("segments", { mode: "json" }).$type<StatusSegment[]>(),
   rawJson: text("raw_json"),
   portalUpdatedAt: text("portal_updated_at"),
   lastCheckedAt: text("last_checked_at"),

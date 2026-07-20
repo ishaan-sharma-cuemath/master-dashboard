@@ -12,6 +12,7 @@ import {
   projects,
   projectTags,
   relations,
+  SHAPES,
   stages,
   statusUpdates,
   type StageRow,
@@ -39,6 +40,7 @@ const linkInput = z.object({
 const createProjectInput = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters"),
   description: z.string().default(""),
+  shape: z.enum(SHAPES).default("linear"),
   folderId: z.string().nullish(),
   leadId: z.string().nullish(),
   ownerName: z.string().nullish(),
@@ -99,6 +101,7 @@ export async function createProject(raw: CreateProjectInput): Promise<{ id: stri
       .values({
         name: input.name,
         description: input.description,
+        shape: input.shape,
         folderId: folder.id,
         leadId: lead.id,
         ownerName: input.ownerName?.trim() || null,
