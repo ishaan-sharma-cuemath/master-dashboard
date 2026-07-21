@@ -107,8 +107,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <>
               <div className="text-[13px]" style={{ color: "var(--ink-secondary)" }}>
                 {p.portal.summary ? <span>“{p.portal.summary}”</span> : <span style={{ color: "var(--ink-muted)" }}>No summary reported.</span>}
-                <span className="ml-2 font-mono text-[11.5px]" style={{ color: p.portal.fresh ? "var(--ink-muted)" : "var(--health-stale-text)" }}>
-                  · {p.portal.fresh ? "checked" : "no signal · checked"} {sinceLabel(p.portal.checkedAt)}
+                <span className="ml-2 font-mono text-[11.5px]" style={{ color: !p.portal.live || p.portal.fresh ? "var(--ink-muted)" : "var(--health-stale-text)" }}>
+                  · {p.portal.live ? (p.portal.fresh ? "checked" : "no signal · checked") : "as of"} {sinceLabel(p.portal.checkedAt)}
                 </span>
               </div>
               {/* Pipeline breakdown */}

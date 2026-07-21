@@ -43,5 +43,7 @@ export type DerivedProject = ProjectRow & {
     segments: { label: string; value: number }[] | null;
     checkedAt: string | null;
     fresh: boolean;
+    /** true = live-polled from an external endpoint (decays to grey); false = static cached data */
+    live: boolean;
   } | null;
 };

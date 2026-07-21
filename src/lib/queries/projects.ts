@@ -120,13 +120,18 @@ export function getWorkspace(now: Date = new Date()): Workspace {
     let stageLabel = currentStage?.name ?? (pStages.length ? "All stages done" : "No stages yet");
     let portal: DerivedProject["portal"] = null;
 
-    // Reflect-up: a project with a status endpoint takes its health/progress from
-    // the cached portal snapshot. A quiet or unreachable portal reads grey (stale),
-    // never fake-green.
-    if (p.statusEndpoint) {
-      const snap = statusById.get(p.id) ?? null;
+    // Reflect-up: a project takes its health/progress from its status snapshot.
+    // A LIVE endpoint decays to grey when quiet (never fake-green); a STATIC snapshot
+    // (seeded/manual, no endpoint) is shown as-is and doesn't decay.
+    const snap = statusById.get(p.id) ?? null;
+    if (p.statusEndpoint || snap) {
+      const live = Boolean(p.statusEndpoint);
       const succeededMs = snap?.lastSuccessAt ? new Date(snap.lastSuccessAt).getTime() : 0;
-      const fresh = Boolean(snap && succeededMs > 0 && nowMs - succeededMs < PORTAL_STALE_MS && snap.status !== "unknown");
+      const fresh = snap
+        ? live
+          ? succeededMs > 0 && nowMs - succeededMs < PORTAL_STALE_MS && snap.status !== "unknown"
+          : snap.status !== "unknown"
+        : false;
       displayHealth = fresh ? portalHealth(snap!.status) : { kind: "stale" };
       if (fresh && snap?.progress != null) progressPct = snap.progress;
       if (snap?.stage) stageLabel = snap.stage;
@@ -137,8 +142,9 @@ export function getWorkspace(now: Date = new Date()): Workspace {
           ? { label: snap.metricLabel, value: snap.metricValue, target: snap.metricTarget, unit: snap.metricUnit }
           : null,
         segments: snap?.segments ?? null,
-        checkedAt: snap?.lastCheckedAt ?? null,
+        checkedAt: snap?.lastCheckedAt ?? snap?.lastSuccessAt ?? null,
         fresh,
+        live,
       };
     }
 
