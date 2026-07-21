@@ -100,6 +100,7 @@ export async function pollProject(
       metricUnit: metric.unit,
       segments: parseSegments(body.segments),
       stageCounts: parseSegments(body.stageCounts),
+      history: Array.isArray(body.history) ? body.history.map(Number).filter((n) => Number.isFinite(n)) : null,
       rawJson: JSON.stringify(body).slice(0, 4000),
       portalUpdatedAt: body.updatedAt != null ? String(body.updatedAt) : null,
       lastCheckedAt: now,

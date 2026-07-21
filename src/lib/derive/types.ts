@@ -42,6 +42,7 @@ export type DerivedProject = ProjectRow & {
     metric: { label: string; value: number | null; target: number | null; unit: string | null } | null;
     segments: { label: string; value: number }[] | null;
     stageCounts: { label: string; value: number }[] | null;
+    history: number[] | null;
     checkedAt: string | null;
     fresh: boolean;
     /** true = live-polled from an external endpoint (decays to grey); false = static cached data */

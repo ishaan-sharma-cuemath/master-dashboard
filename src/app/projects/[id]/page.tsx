@@ -1,15 +1,18 @@
+import { Sparkline } from "@/components/charts/Sparkline";
+import { StatTiles, type Stat } from "@/components/charts/StatTiles";
 import { HealthBadge } from "@/components/health/HealthBadge";
-import { AutoPoll } from "@/components/shell/AutoPoll";
+import { BurnUpChart } from "@/components/project/BurnUpChart";
 import { OversightActions } from "@/components/project/OversightActions";
 import { PipelineView } from "@/components/project/PipelineView";
 import { StatusEndpointField } from "@/components/project/StatusEndpointField";
+import { AutoPoll } from "@/components/shell/AutoPoll";
 import { TagChip } from "@/components/ui/TagChip";
 import { db } from "@/lib/db/client";
-import { statusUpdates } from "@/lib/db/schema";
+import { progressSnapshots, statusUpdates } from "@/lib/db/schema";
 import { daysSince } from "@/lib/derive";
 import { fmtDate, fmtDateTime, relAge } from "@/lib/format";
 import { getWorkspace } from "@/lib/queries/projects";
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { ArrowLeft, ArrowUpRight, Check } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -30,6 +33,19 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     .where(eq(statusUpdates.projectId, id))
     .orderBy(desc(statusUpdates.createdAt))
     .all();
+  const snapshots = db
+    .select()
+    .from(progressSnapshots)
+    .where(eq(progressSnapshots.projectId, id))
+    .orderBy(asc(progressSnapshots.takenAt))
+    .all();
+  const stagesDone = p.stages.filter((s) => s.state === "done").length;
+  const linearStats: Stat[] = [
+    { label: "Progress", value: `${p.progressPct}%`, tone: "accent" },
+    { label: "Stages done", value: `${stagesDone}/${p.stages.length}` },
+    { label: "Target", value: fmtDate(p.targetDate) },
+    { label: "Updated", value: relAge(p.daysSinceUpdate) },
+  ];
 
   return (
     <div className="mx-auto max-w-[760px] px-5 py-8">
@@ -45,10 +61,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       {/* ————— Header ————— */}
       <header className="mt-5 flex flex-wrap items-start gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-[26px] font-semibold tracking-[-0.02em]">{p.name}</h1>
-            <HealthBadge dh={p.displayHealth} lifecycle={p.lifecycle} />
-          </div>
+          <h1 className="text-[26px] font-semibold tracking-[-0.02em]">{p.name}</h1>
           <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px]" style={{ color: "var(--ink-muted)" }}>
             {(p.ownerName || p.ownerEmail) && (
               <span className="flex items-center gap-1.5">
@@ -143,6 +156,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                   />
                 </div>
               )}
+              {p.portal.history && p.portal.history.length > 1 && (
+                <div className="mt-4">
+                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ink-muted)" }}>
+                    Trend
+                  </div>
+                  <div className="mt-1.5">
+                    <Sparkline values={p.portal.history} />
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="mt-3">
@@ -152,19 +175,37 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </section>
       )}
 
-      {/* ————— Stages — LINEAR projects only ————— */}
+      {/* ————— Staged project dashboard ————— */}
       {p.shape === "linear" && (
-        <section className="mt-8">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
-              Stages
-            </h2>
-            <span className="text-[13px] font-medium tabular-nums" style={{ color: "var(--ink-secondary)" }}>
-              {p.progressPct}% · {p.currentStage?.name ?? (p.stages.length ? "Complete" : "No stages")}
-            </span>
+        <section className="mt-7">
+          <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
+            Overview
+          </h2>
+          <div className="mt-4">
+            <StatTiles stats={linearStats} />
           </div>
 
-          <ol className="mt-4 flex flex-col gap-0.5">
+          {/* Progress over time */}
+          <div className="card mt-4 p-5">
+            <div className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
+              Progress over time
+            </div>
+            <div className="mt-3">
+              <BurnUpChart snapshots={snapshots} targetDate={p.targetDate} createdAt={p.createdAt} />
+            </div>
+          </div>
+
+          {/* Stage stepper */}
+          <div className="card mt-4 p-5">
+            <div className="flex items-baseline justify-between">
+              <div className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
+                Stages
+              </div>
+              <span className="text-[13px] font-medium tabular-nums" style={{ color: "var(--ink-secondary)" }}>
+                {p.currentStage?.name ?? (p.stages.length ? "Complete" : "No stages")}
+              </span>
+            </div>
+            <ol className="mt-3 flex flex-col gap-0.5">
             {p.stages.map((s) => {
               const done = s.state === "done";
               const current = s.state === "current";
@@ -193,7 +234,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 No stages yet.
               </li>
             )}
-          </ol>
+            </ol>
+          </div>
         </section>
       )}
 

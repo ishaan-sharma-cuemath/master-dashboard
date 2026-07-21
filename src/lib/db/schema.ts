@@ -210,6 +210,8 @@ export const projectStatus = sqliteTable("project_status", {
   segments: text("segments", { mode: "json" }).$type<StatusSegment[]>(),
   // Optional current distribution across stages → funnel / stage bars
   stageCounts: text("stage_counts", { mode: "json" }).$type<StatusSegment[]>(),
+  // Optional recent value history for metric shapes → trend sparkline
+  history: text("history", { mode: "json" }).$type<number[]>(),
   rawJson: text("raw_json"),
   portalUpdatedAt: text("portal_updated_at"),
   lastCheckedAt: text("last_checked_at"),

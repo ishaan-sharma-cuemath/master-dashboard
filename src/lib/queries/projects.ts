@@ -143,6 +143,7 @@ export function getWorkspace(now: Date = new Date()): Workspace {
           : null,
         segments: snap?.segments ?? null,
         stageCounts: snap?.stageCounts ?? null,
+        history: snap?.history ?? null,
         checkedAt: snap?.lastCheckedAt ?? snap?.lastSuccessAt ?? null,
         fresh,
         live,

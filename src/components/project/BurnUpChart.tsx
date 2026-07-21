@@ -122,7 +122,19 @@ export function BurnUpChart({
   const chipX = targetMs !== null ? (tx + chipW + 4 > width - PR ? tx - chipW - 4 : tx + 4) : 0;
 
   return (
-    <div ref={wrapRef} className="relative w-full" style={{ height: H }}>
+    <div className="w-full">
+      {/* legend above the chart — identity never by color alone, and clear of the target chip */}
+      <div className="mb-1.5 flex items-center justify-end gap-3 font-mono text-[10px]" style={{ color: "var(--ink-muted)" }}>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-[2px] w-3 rounded-full" style={{ background: "var(--accent)" }} />
+          completed
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-[2px] w-3 rounded-full" style={{ background: "var(--ink-muted)" }} />
+          scope
+        </span>
+      </div>
+      <div ref={wrapRef} className="relative w-full" style={{ height: H }}>
       {width > 0 && (
         <svg width={width} height={H} onMouseMove={onMove} onMouseLeave={() => setHover(null)} className="block">
           {/* gridlines + y labels */}
@@ -208,18 +220,6 @@ export function BurnUpChart({
         </svg>
       )}
 
-      {/* legend — identity never by color alone */}
-      <div className="absolute right-0 top-0 flex items-center gap-3 font-mono text-[10px]" style={{ color: "var(--ink-muted)" }}>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-[2px] w-3 rounded-full" style={{ background: "var(--accent)" }} />
-          completed
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-[2px] w-3 rounded-full" style={{ background: "var(--ink-muted)" }} />
-          scope
-        </span>
-      </div>
-
       {/* tooltip */}
       {hp && (
         <div
@@ -237,6 +237,7 @@ export function BurnUpChart({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
