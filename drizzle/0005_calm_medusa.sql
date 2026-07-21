@@ -1,0 +1,1 @@
+ALTER TABLE `project_status` ADD `stage_counts` text;

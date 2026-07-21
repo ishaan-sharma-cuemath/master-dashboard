@@ -206,8 +206,10 @@ export const projectStatus = sqliteTable("project_status", {
   metricValue: real("metric_value"),
   metricTarget: real("metric_target"),
   metricUnit: text("metric_unit"),
-  // Optional breakdown for pipeline shapes → segmented bar
+  // Optional breakdown for pipeline shapes → outcome donut / segmented bar
   segments: text("segments", { mode: "json" }).$type<StatusSegment[]>(),
+  // Optional current distribution across stages → funnel / stage bars
+  stageCounts: text("stage_counts", { mode: "json" }).$type<StatusSegment[]>(),
   rawJson: text("raw_json"),
   portalUpdatedAt: text("portal_updated_at"),
   lastCheckedAt: text("last_checked_at"),

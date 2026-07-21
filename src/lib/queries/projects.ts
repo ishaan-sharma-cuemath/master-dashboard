@@ -142,6 +142,7 @@ export function getWorkspace(now: Date = new Date()): Workspace {
           ? { label: snap.metricLabel, value: snap.metricValue, target: snap.metricTarget, unit: snap.metricUnit }
           : null,
         segments: snap?.segments ?? null,
+        stageCounts: snap?.stageCounts ?? null,
         checkedAt: snap?.lastCheckedAt ?? snap?.lastSuccessAt ?? null,
         fresh,
         live,

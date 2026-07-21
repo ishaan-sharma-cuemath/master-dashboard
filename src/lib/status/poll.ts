@@ -99,6 +99,7 @@ export async function pollProject(
       metricTarget: metric.target,
       metricUnit: metric.unit,
       segments: parseSegments(body.segments),
+      stageCounts: parseSegments(body.stageCounts),
       rawJson: JSON.stringify(body).slice(0, 4000),
       portalUpdatedAt: body.updatedAt != null ? String(body.updatedAt) : null,
       lastCheckedAt: now,

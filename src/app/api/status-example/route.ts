@@ -21,6 +21,13 @@ export function GET() {
         { label: "Rejected", value: 3 },
         { label: "In progress", value: 6 },
       ],
+      stageCounts: [
+        { label: "Submission", value: 3 },
+        { label: "Biometric", value: 2 },
+        { label: "Consulate interview", value: 1 },
+        { label: "Granted", value: 34 },
+        { label: "Rejected", value: 3 },
+      ],
       updatedAt: new Date().toISOString(),
       serviceId: "example",
       version: "1",

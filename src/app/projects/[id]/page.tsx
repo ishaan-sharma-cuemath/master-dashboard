@@ -1,13 +1,13 @@
 import { HealthBadge } from "@/components/health/HealthBadge";
 import { AutoPoll } from "@/components/shell/AutoPoll";
 import { OversightActions } from "@/components/project/OversightActions";
+import { PipelineView } from "@/components/project/PipelineView";
 import { StatusEndpointField } from "@/components/project/StatusEndpointField";
-import { SegmentBar, SegmentLegend } from "@/components/ui/SegmentBar";
 import { TagChip } from "@/components/ui/TagChip";
 import { db } from "@/lib/db/client";
 import { statusUpdates } from "@/lib/db/schema";
 import { daysSince } from "@/lib/derive";
-import { fmtDate, fmtDateTime, relAge, sinceLabel } from "@/lib/format";
+import { fmtDate, fmtDateTime, relAge } from "@/lib/format";
 import { getWorkspace } from "@/lib/queries/projects";
 import { desc, eq } from "drizzle-orm";
 import { ArrowLeft, ArrowUpRight, Check } from "lucide-react";
@@ -96,40 +96,61 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </p>
       )}
 
-      {/* ————— Reported status (pulled up from the project's own portal) ————— */}
-      <section className="mt-8">
-        <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
-          Reported status
-        </h2>
-        <div className="mt-3 flex flex-col gap-2">
-          <StatusEndpointField projectId={p.id} endpoint={p.statusEndpoint} hasToken={Boolean(p.statusToken)} />
-          {p.portal && (
-            <>
-              <div className="text-[13px]" style={{ color: "var(--ink-secondary)" }}>
-                {p.portal.summary ? <span>“{p.portal.summary}”</span> : <span style={{ color: "var(--ink-muted)" }}>No summary reported.</span>}
-                <span className="ml-2 font-mono text-[11.5px]" style={{ color: !p.portal.live || p.portal.fresh ? "var(--ink-muted)" : "var(--health-stale-text)" }}>
-                  · {p.portal.live ? (p.portal.fresh ? "checked" : "no signal · checked") : "as of"} {sinceLabel(p.portal.checkedAt)}
-                </span>
+      {/* ————— Pipeline dashboard ————— */}
+      {p.shape === "pipeline" &&
+        (p.portal ? (
+          <PipelineView portal={p.portal} />
+        ) : (
+          <section className="mt-8">
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
+              Overview
+            </h2>
+            <p className="mt-2 text-[13.5px]" style={{ color: "var(--ink-muted)" }}>
+              Connect this project&apos;s portal to see its live breakdown.
+            </p>
+            <div className="mt-3">
+              <StatusEndpointField projectId={p.id} endpoint={p.statusEndpoint} hasToken={Boolean(p.statusToken)} />
+            </div>
+          </section>
+        ))}
+
+      {/* ————— Metric ————— */}
+      {p.shape === "metric" && (
+        <section className="mt-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
+            Metric
+          </h2>
+          {p.portal?.metric?.value != null ? (
+            <div className="card mt-3 p-5">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ink-muted)" }}>
+                {p.portal.metric.label}
               </div>
-              {/* Pipeline breakdown */}
-              {p.portal.segments && (
-                <div className="mt-1 flex flex-col gap-2">
-                  <SegmentBar segments={p.portal.segments} height={8} />
-                  <SegmentLegend segments={p.portal.segments} />
+              <div className="mt-1.5 font-mono text-[34px] font-medium leading-none tabular-nums" style={{ color: "var(--ink)" }}>
+                {p.portal.metric.value}
+                {p.portal.metric.unit ? ` ${p.portal.metric.unit}` : ""}
+                {p.portal.metric.target != null && (
+                  <span className="text-[16px]" style={{ color: "var(--ink-muted)" }}>
+                    {" "}
+                    / {p.portal.metric.target}
+                  </span>
+                )}
+              </div>
+              {p.portal.metric.target != null && p.portal.metric.value != null && (
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--line)" }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${Math.min(100, Math.round((p.portal.metric.value / p.portal.metric.target) * 100))}%`, background: "var(--accent)" }}
+                  />
                 </div>
               )}
-              {/* Headline metric (metric-shape / supporting figure) */}
-              {!p.portal.segments && p.portal.metric?.value != null && (
-                <div className="text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
-                  {p.portal.metric.label}: {p.portal.metric.value}
-                  {p.portal.metric.target != null ? ` / ${p.portal.metric.target}` : ""}
-                  {p.portal.metric.unit ? ` ${p.portal.metric.unit}` : ""}
-                </div>
-              )}
-            </>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <StatusEndpointField projectId={p.id} endpoint={p.statusEndpoint} hasToken={Boolean(p.statusToken)} />
+            </div>
           )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ————— Stages — LINEAR projects only ————— */}
       {p.shape === "linear" && (
@@ -181,7 +202,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em]" style={{ color: "var(--ink-muted)" }}>
           Oversight
         </h2>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-3">
           <OversightActions
             projectId={p.id}
             flagged={p.flagged}
@@ -190,6 +211,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             ownerName={p.ownerName}
             ownerEmail={p.ownerEmail}
           />
+          {/* Portal connection (setup) lives here, out of the way of the data */}
+          {(p.shape === "pipeline" || p.shape === "metric") && p.portal && (
+            <StatusEndpointField projectId={p.id} endpoint={p.statusEndpoint} hasToken={Boolean(p.statusToken)} />
+          )}
         </div>
       </section>
 

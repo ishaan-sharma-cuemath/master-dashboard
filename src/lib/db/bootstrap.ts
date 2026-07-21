@@ -20,6 +20,13 @@ const VISA_SAMPLE = {
     { label: "Rejected", value: 3 },
     { label: "In progress", value: 6 },
   ] as StatusSegment[],
+  stageCounts: [
+    { label: "Submission", value: 3 },
+    { label: "Biometric", value: 2 },
+    { label: "Consulate interview", value: 1 },
+    { label: "Granted", value: 34 },
+    { label: "Rejected", value: 3 },
+  ] as StatusSegment[],
 };
 
 function seedVisaSnapshot(db: BetterSQLite3Database<typeof schema>, projectId: string) {
@@ -36,6 +43,7 @@ function seedVisaSnapshot(db: BetterSQLite3Database<typeof schema>, projectId: s
       metricTarget: VISA_SAMPLE.metricTarget,
       metricUnit: VISA_SAMPLE.metricUnit,
       segments: VISA_SAMPLE.segments,
+      stageCounts: VISA_SAMPLE.stageCounts,
       rawJson: null,
       portalUpdatedAt: now,
       lastCheckedAt: now,
@@ -44,7 +52,14 @@ function seedVisaSnapshot(db: BetterSQLite3Database<typeof schema>, projectId: s
     })
     .onConflictDoUpdate({
       target: projectStatus.projectId,
-      set: { summary: VISA_SAMPLE.summary, segments: VISA_SAMPLE.segments, status: VISA_SAMPLE.status, lastSuccessAt: now, lastCheckedAt: now },
+      set: {
+        summary: VISA_SAMPLE.summary,
+        segments: VISA_SAMPLE.segments,
+        stageCounts: VISA_SAMPLE.stageCounts,
+        status: VISA_SAMPLE.status,
+        lastSuccessAt: now,
+        lastCheckedAt: now,
+      },
     })
     .run();
 }
