@@ -26,7 +26,7 @@ export function HealthHistoryStrip({ updates }: { updates: StatusUpdateRow[] }) 
               key={u.id}
               className="flex-1 rounded-[2px] first:rounded-l-[4px] last:rounded-r-[4px]"
               style={{ background: HEALTH_VAR[u.health] ?? "var(--health-stale)" }}
-              title={`${fmtDateTime(u.createdAt)} · ${HEALTH_WORD[u.health]} — ${excerpt}`}
+              title={`${fmtDateTime(u.createdAt)} · ${HEALTH_WORD[u.health]}: ${excerpt}`}
             />
           );
         })}

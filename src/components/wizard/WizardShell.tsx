@@ -82,7 +82,8 @@ export function WizardShell({ data }: { data: WizardData }) {
     setDraft((d) => ({
       ...d,
       templateKey: key,
-      stages: template.stages.map((s) => ({
+      shape: template.shape,
+      stages: (template.stages ?? []).map((s) => ({
         id: crypto.randomUUID(),
         name: s.name,
         targetDate: format(addDays(today, s.offsetDays), "yyyy-MM-dd"),
@@ -130,7 +131,7 @@ export function WizardShell({ data }: { data: WizardData }) {
       }
       router.push(`/projects/${id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong — please try again.");
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
       setPending(false);
     }
   };
@@ -175,7 +176,15 @@ export function WizardShell({ data }: { data: WizardData }) {
       <div className="mt-6 min-h-[280px]">
         {step === 0 && <StepTemplate selected={draft.templateKey} onSelect={selectTemplate} />}
         {step === 1 && <StepBasics draft={draft} data={data} onChange={patch} />}
-        {step === 2 && <StepStages stages={draft.stages} onChange={(stages) => patch({ stages })} />}
+        {step === 2 &&
+          (draft.shape === "linear" ? (
+            <StepStages stages={draft.stages} onChange={(stages) => patch({ stages })} />
+          ) : (
+            <p className="text-[13.5px]" style={{ color: "var(--ink-secondary)" }}>
+              This project reports its status from its own portal, so it has no manual stages. You&apos;ll connect that
+              portal after creating it.
+            </p>
+          ))}
         {step === 3 && <StepExtras draft={draft} data={data} onChange={patch} />}
       </div>
 

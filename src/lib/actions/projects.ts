@@ -93,7 +93,9 @@ export async function createProject(raw: CreateProjectInput): Promise<{ id: stri
 
   const lead = resolveActor(input.leadId);
   const folder = resolveFolder(input.folderId);
-  const lifecycle = input.stages.length > 0 ? ("in_progress" as const) : ("planned" as const);
+  // Pipelines/metrics are active by nature; a linear project is planned until it has stages.
+  const lifecycle =
+    input.stages.length > 0 || input.shape !== "linear" ? ("in_progress" as const) : ("planned" as const);
 
   const id = db.transaction((tx) => {
     const project = tx

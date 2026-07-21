@@ -18,7 +18,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Master Dashboard",
-  description: "Mission control for every project — status, progress, and owners in one place.",
+  description: "Mission control for every project: status, progress, and owners in one place.",
 };
 
 export default function RootLayout({

@@ -134,7 +134,7 @@ export function ProjectsTable({ projects }: { projects: DerivedProject[] }) {
                 </td>
 
                 <td className="max-w-[200px] truncate px-3 py-2.5 text-[13px]" style={{ color: "var(--ink-secondary)" }}>
-                  {p.currentStage?.name ?? (p.stages.length === 0 ? "—" : "All stages done")}
+                  {p.currentStage?.name ?? (p.stages.length === 0 ? "No stage" : "All stages done")}
                 </td>
 
                 <td className="whitespace-nowrap px-3 py-2.5">

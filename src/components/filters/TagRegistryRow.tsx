@@ -123,7 +123,7 @@ export function TagRegistryRow({
 
       {/* Group */}
       <div className="truncate font-mono text-[11px]" style={{ color: "var(--ink-muted)" }}>
-        {groupName ?? "—"}
+        {groupName ?? "None"}
       </div>
 
       {/* Definition (+ inline error) */}
@@ -135,7 +135,7 @@ export function TagRegistryRow({
         ) : tag.definition ? (
           tag.definition
         ) : (
-          <span style={{ color: "var(--ink-muted)" }}>—</span>
+          <span style={{ color: "var(--ink-muted)" }}>No definition</span>
         )}
       </div>
 

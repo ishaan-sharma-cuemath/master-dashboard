@@ -53,13 +53,22 @@ export type PollOutcome = { projectId: string; name: string; ok: boolean; status
  * On any failure (timeout, non-2xx, bad JSON), KEEP the last good values —
  * only bump the failure counter — so a portal going dark never fakes green.
  */
-export async function pollProject(project: {
-  id: string;
-  name: string;
-  statusEndpoint: string | null;
-  statusToken: string | null;
-}): Promise<PollOutcome> {
+export async function pollProject(
+  project: {
+    id: string;
+    name: string;
+    statusEndpoint: string | null;
+    statusToken: string | null;
+  },
+  baseUrl?: string,
+): Promise<PollOutcome> {
   if (!project.statusEndpoint) return { projectId: project.id, name: project.name, ok: false, status: "unknown", reason: "no endpoint" };
+
+  // Relative endpoints (e.g. "/api/status-example") resolve against the app's own origin,
+  // so the same stored value works on localhost and in production.
+  const url = project.statusEndpoint.startsWith("/")
+    ? new URL(project.statusEndpoint, baseUrl ?? "http://localhost:3001").toString()
+    : project.statusEndpoint;
 
   const now = new Date().toISOString();
   const prev = db.select().from(projectStatus).where(eq(projectStatus.projectId, project.id)).get();
@@ -67,7 +76,7 @@ export async function pollProject(project: {
   const timer = setTimeout(() => ac.abort(), POLL_TIMEOUT_MS);
 
   try {
-    const res = await fetch(project.statusEndpoint, {
+    const res = await fetch(url, {
       signal: ac.signal,
       headers: {
         Accept: "application/health+json, application/json",
@@ -132,13 +141,13 @@ export async function pollProject(project: {
 }
 
 /** Poll every project that has a status endpoint, concurrently and independently. */
-export async function pollAll(): Promise<PollOutcome[]> {
+export async function pollAll(baseUrl?: string): Promise<PollOutcome[]> {
   const rows = db
     .select({ id: projects.id, name: projects.name, statusEndpoint: projects.statusEndpoint, statusToken: projects.statusToken })
     .from(projects)
     .all()
     .filter((p) => p.statusEndpoint);
-  const results = await Promise.allSettled(rows.map((p) => pollProject(p)));
+  const results = await Promise.allSettled(rows.map((p) => pollProject(p, baseUrl)));
   return results.map((r, i) =>
     r.status === "fulfilled" ? r.value : { projectId: rows[i].id, name: rows[i].name, ok: false, status: "unknown", reason: "poll threw" },
   );

@@ -333,7 +333,7 @@ export default function GraphCanvas({ data }: { data: GraphData }) {
     (ctx: CanvasRenderingContext2D, globalScale: number) => {
       if (!palette) return;
       const spacing = 28;
-      if (spacing * globalScale < 9) return; // zoomed way out — grid would turn to noise
+      if (spacing * globalScale < 9) return; // zoomed way out, grid would turn to noise
       const inv = ctx.getTransform().inverse();
       const p0 = inv.transformPoint(new DOMPoint(0, 0));
       const p1 = inv.transformPoint(new DOMPoint(ctx.canvas.width, ctx.canvas.height));
@@ -486,7 +486,7 @@ export default function GraphCanvas({ data }: { data: GraphData }) {
               style={{ background: HEALTH_VAR[hover.healthKey ?? "neutral"] }}
             />
             <span className="text-[12px]" style={{ color: "var(--ink-secondary)" }}>
-              {hover.healthWord ?? "—"}
+              {hover.healthWord ?? "Unknown"}
             </span>
             <span className="ml-auto font-mono text-[11px]" style={{ color: "var(--ink-muted)" }}>
               {Math.round((hover.progress ?? 0) * 100)}%

@@ -148,7 +148,7 @@ export function StepExtras({
           })}
         </div>
         <p className="mt-1.5 text-[11.5px]" style={{ color: "var(--ink-muted)" }}>
-          Optional — posts a first status update. Click again to clear.
+          Optional. Posts a first status update. Click again to clear.
         </p>
       </section>
 
@@ -158,7 +158,7 @@ export function StepExtras({
         <textarea
           value={draft.initialNote}
           onChange={(e) => onChange({ initialNote: e.target.value })}
-          placeholder="Kicking off — scope agreed with…"
+          placeholder="Kicking off, scope agreed with…"
           rows={3}
           className={`${textareaCls} mt-2`}
           style={fieldStyle}

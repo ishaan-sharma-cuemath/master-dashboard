@@ -30,7 +30,7 @@ export function StatusDot({
 
   return (
     <span
-      title={note ? `${healthWord(dh, lifecycle)} — ${note}` : healthWord(dh, lifecycle)}
+      title={note ? `${healthWord(dh, lifecycle)}: ${note}` : healthWord(dh, lifecycle)}
       className="inline-block shrink-0 rounded-full"
       style={{
         width: size,

@@ -88,7 +88,7 @@ export function UpdateComposer({
       {needsRtg && (
         <div className="mt-2 rounded-[8px] border p-3" style={{ borderColor: "var(--line)", background: "var(--health-amber-soft)" }}>
           <label className="microlabel" htmlFor="rtg-action" style={{ color: "var(--health-amber-text)" }}>
-            Road to green — required
+            Road to green (required)
           </label>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row">
             <input

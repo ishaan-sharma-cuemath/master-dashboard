@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ————————————————————————————————————————————————
-   Refined clean theme — soft depth, muted color, lots of air.
+   Refined clean theme: soft depth, muted color, lots of air.
    Neutrals carry a faint cool bias; RAG dots are muted, grown-up.
    Depth comes from soft layered shadow, not hard borders.
    ———————————————————————————————————————————————— */

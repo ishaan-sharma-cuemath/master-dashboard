@@ -19,7 +19,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(next)}
-      title={`Theme: ${current} — click for ${next}`}
+      title={`Theme: ${current}, click for ${next}`}
       className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] border transition-colors hover:border-[var(--line-strong)]"
       style={{ borderColor: "var(--line)", color: "var(--ink-secondary)" }}
     >

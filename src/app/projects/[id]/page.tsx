@@ -1,4 +1,5 @@
 import { HealthBadge } from "@/components/health/HealthBadge";
+import { AutoPoll } from "@/components/shell/AutoPoll";
 import { OversightActions } from "@/components/project/OversightActions";
 import { StatusEndpointField } from "@/components/project/StatusEndpointField";
 import { SegmentBar, SegmentLegend } from "@/components/ui/SegmentBar";
@@ -32,6 +33,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="mx-auto max-w-[760px] px-5 py-8">
+      <AutoPoll />
       <Link
         href="/"
         className="inline-flex items-center gap-1.5 text-[13px] transition-colors hover:text-[var(--ink)]"

@@ -83,7 +83,7 @@ export function CommandPalette({ items }: { items: SearchItem[] }) {
       <Command.Input
         value={query}
         onValueChange={setQuery}
-        placeholder="Search projects, folders, tags, people — or run an action…"
+        placeholder="Search projects, folders, tags, people, or run an action…"
         className="h-12 w-full border-b border-[var(--line)] bg-transparent px-4 text-[14px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-muted)]"
       />
       <Command.List className="max-h-[380px] overflow-y-auto overscroll-contain p-1.5 [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10.5px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-[var(--ink-muted)]">

@@ -112,7 +112,7 @@ export function StepStages({
   return (
     <div className="flex flex-col gap-2.5">
       <p className="text-[13px]" style={{ color: "var(--ink-secondary)" }}>
-        Write this project&apos;s stages in order — the first becomes{" "}
+        Write this project&apos;s stages in order. The first becomes{" "}
         <span className="font-mono text-[11.5px]">current</span> on create. Drag to reorder.
       </p>
 
